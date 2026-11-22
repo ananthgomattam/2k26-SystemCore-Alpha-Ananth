@@ -63,6 +63,7 @@ public class V3_HorseRollerFloorConstants {
   public enum RollerFloorState {
     RUN,
     OVERRIDE,
+    SPIN_UP,
     STOP
   }
 }

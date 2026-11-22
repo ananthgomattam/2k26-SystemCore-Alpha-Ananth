@@ -31,6 +31,7 @@ import first.robot.RobotConfig;
 import first.robot.util.AllianceFlipUtil;
 import first.robot.util.CV2_input.XKeysInput;
 import first.robot.v3_Horse.commands.V3_HorseCompositeCommands;
+import first.robot.v3_Horse.commands.V3_HorseDriveCommands;
 import first.robot.v3_Horse.commands.autonomous.V3_HorseAutoBackUpShoot;
 import first.robot.v3_Horse.commands.autonomous.V3_HorseAutoDoubleDip;
 import first.robot.v3_Horse.subsystems.intake.V3_HorseIntake;
@@ -358,8 +359,16 @@ public class V3_HorseRobotContainer implements RobotContainer {
                 driver.leftTrigger(),
                 DriveBehaviors.faceHeading(
                     V3_HorseConstants.DRIVE_CONSTANTS, V3_HorseRobotState::getCardinalDirection))
+            // School bus: face the direction of travel (lowest priority, toggled on right stick)
+            .with(
+                V3_HorseDriveCommands.schoolBusActive(
+                    () -> -driver.getLeftY(), () -> -driver.getLeftX()),
+                DriveBehaviors.faceHeading(
+                    V3_HorseConstants.DRIVE_CONSTANTS,
+                    V3_HorseDriveCommands.schoolBusHeading(
+                        () -> -driver.getLeftY(), () -> -driver.getLeftX())))
             .build()
-            .withName("joystickDriveRotationLock"));
+            .withName("schoolBusDrive"));
 
     driver.leftTrigger().onTrue(Commands.runOnce(() -> {}).withName("cardinal-direction-set"));
 
@@ -426,6 +435,10 @@ public class V3_HorseRobotContainer implements RobotContainer {
 
     driver.b().onTrue(V3_HorseCompositeCommands.intakeStow(intake).withName("driver-B-true"));
 
+    driver
+        .rightStick()
+        .onTrue(V3_HorseDriveCommands.toggleSchoolBus().withName("driver-rightStick-true"));
+
     operator
         .leftBumper()
         .onTrue(V3_HorseCompositeCommands.intakeStow(intake).withName("operator-leftBumper-true"));
@@ -476,10 +489,19 @@ public class V3_HorseRobotContainer implements RobotContainer {
         .povRight()
         .onTrue(intake.zeroExtensions().withName("operator-dPadRight-true"));
 
-    operator.y().onTrue(shooter.incrementFlywheelVelocity().withName("operator-Y-true"));
-    operator.x().onTrue(shooter.decrementFlywheelVelocity().withName("operator-X-true"));
-    operator.b().onTrue(shooter.incrementHoodAngle().withName("operator-B-true"));
-    operator.a().onTrue(shooter.decrementHoodAngle().withName("operator-A-true"));
+    operator.b().onTrue(shooter.incrementFlywheelVelocity().withName("operator-B-true"));
+    operator.a().onTrue(shooter.decrementFlywheelVelocity().withName("operator-A-true"));
+
+    operator
+        .x()
+        .whileTrue(
+            V3_HorseCompositeCommands.fixedShotCommand(
+                    rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.FEED)
+                .withName("driver-X-true"))
+        .onFalse(stopShooter("driver-X-false"));
+
+    // operator.b().onTrue(shooter.incrementHoodAngle().withName("operator-B-true"));
+    // operator.a().onTrue(shooter.decrementHoodAngle().withName("operator-A-true"));
 
     operator.back().onTrue(shooter.setGoal(ShooterGoal.STOW).withName("operator-back-true"));
     operator.start().onTrue(intake.resetIntakeZeroPosition().withName("operator-start-true"));
@@ -508,6 +530,9 @@ public class V3_HorseRobotContainer implements RobotContainer {
 
     String autoName = selectedAutoName.get();
     boolean flipped = AllianceFlipUtil.shouldFlip();
+
+    Logger.recordOutput("Drive/School Bus/Enabled", V3_HorseDriveCommands.isSchoolBusEnabled());
+    Logger.recordOutput("Drive/School Bus/Deadband", V3_HorseDriveCommands.getSchoolBusDeadband());
 
     if (!autoName.equals(lastPublishedAuto) || flipped != lastPublishedFlipped) {
       Pose2d[] trajectory = autoTrajectories.getOrDefault(autoName, new Pose2d[0]);

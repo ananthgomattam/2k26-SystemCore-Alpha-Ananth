@@ -82,7 +82,7 @@ public class V3_HorseShooterConstants {
                   .withPrefix("Shooter/Flywheel")
                   .withMaxVelocity(RadiansPerSecond.of(1000))
                   .withMaxAcceleration(RadiansPerSecondPerSecond.of(1000))
-                  .withGoalTolerance(RadiansPerSecond.of(1))
+                  .withGoalTolerance(RadiansPerSecond.of(5))
                   .build())
           .withVelocityOffsetStep(RadiansPerSecond.of(5))
           .withVoltageOffsetStep(Volts.of(1))

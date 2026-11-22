@@ -6,8 +6,12 @@ import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDrive;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDriveConstants;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDriveConstants.AutoAlignConstants;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.commands.SwerveDriveCommands;
+import edu.wpi.team190.gompeilib.tuning.GompeiTunables;
 import first.robot.FieldConstants;
+import first.robot.util.AllianceFlipUtil;
 import first.robot.v3_Horse.V3_HorseRobotState;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.wpilib.command2.Command;
@@ -15,6 +19,7 @@ import org.wpilib.command2.Commands;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.util.Units;
+import org.wpilib.tunable.Tunable;
 
 /**
  * This robot's drive commands, built on GompeiLib's {@link SwerveDriveCommands}. Joystick driving
@@ -23,6 +28,36 @@ import org.wpilib.math.util.Units;
 public final class V3_HorseDriveCommands {
 
   @Getter private static double slowFactor = 0.5;
+
+  @Getter private static boolean schoolBusEnabled = false;
+  private static final Tunable<Double> schoolBusDeadband =
+      GompeiTunables.value("Drive/School Bus/Deadband", 0.3);
+
+  /**
+   * Whether school bus drive should turn the robot this loop: it's toggled on and the left stick is
+   * pushed past the school bus deadband.
+   */
+  public static BooleanSupplier schoolBusActive(DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return () ->
+        schoolBusEnabled
+            && Math.hypot(xSupplier.getAsDouble(), ySupplier.getAsDouble())
+                > schoolBusDeadband.get();
+  }
+
+  /** The field heading the left stick is pushing toward, for school bus drive to face. */
+  public static Supplier<Rotation2d> schoolBusHeading(
+      DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return () ->
+        AllianceFlipUtil.apply(new Rotation2d(xSupplier.getAsDouble(), ySupplier.getAsDouble()));
+  }
+
+  public static Command toggleSchoolBus() {
+    return Commands.runOnce(() -> schoolBusEnabled = !schoolBusEnabled).ignoringDisable(true);
+  }
+
+  public static double getSchoolBusDeadband() {
+    return schoolBusDeadband.get();
+  }
 
   public static Command incrementSlowFactor() {
     return Commands.runOnce(() -> slowFactor = Math.min(slowFactor + 0.05, 1.0));

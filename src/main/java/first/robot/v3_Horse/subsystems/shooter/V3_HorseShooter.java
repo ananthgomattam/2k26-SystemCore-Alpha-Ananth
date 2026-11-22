@@ -28,6 +28,7 @@ import org.wpilib.math.util.Units;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularVelocityUnit;
 import org.wpilib.units.VoltageUnit;
+import org.wpilib.driverstation.MatchState;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 
@@ -165,6 +166,10 @@ public class V3_HorseShooter extends SubsystemBase {
         (V3_HorseRobotState.isInAllianceZone())
             ? hood.atPositionGoal()
             : hoodFeedingTrigger.getAsBoolean());
+
+    if (MatchState.getMatchTime() >= 134) {
+      shooterGoal = ShooterGoal.STOW;
+    }
   }
 
   private Feedforward getCurrentFeedforward() {
@@ -177,6 +182,12 @@ public class V3_HorseShooter extends SubsystemBase {
                 : Amps.zero())
             : Amps.zero());
   }
+  private AngularVelocity getIdleVelocity() {
+    return V3_HorseRobotState.isInAllianceZone()
+        ? V3_HorseRobotState.getScoreVelocity().times(0.9)
+        : V3_HorseRobotState.FixedShots.FRONT_TOWER.getParameters().flywheelSpeed().get();
+  }
+
 
   public Command setGoal(ShooterGoal shooterGoal) {
     return this.runOnce(() -> this.shooterGoal = shooterGoal);
@@ -240,7 +251,7 @@ public class V3_HorseShooter extends SubsystemBase {
     switch (shooterGoal) {
       case STOW:
         hood.setPositionGoal(V3_HorseShooterConstants.HOOD_CONSTANTS.armParameters.minAngle());
-        flywheel.stop();
+        flywheel.setVelocityGoal(getIdleVelocity(), getCurrentFeedforward());
         break;
       case SCORE:
         hood.setPositionGoal(V3_HorseRobotState.getScoreAngle());
@@ -261,7 +272,7 @@ public class V3_HorseShooter extends SubsystemBase {
         break;
       case STOP:
         hood.setPositionGoal(Radians.of(0.0));
-        flywheel.stop();
+        flywheel.setVelocityGoal(getIdleVelocity(), getCurrentFeedforward());
         break;
       default:
         break;

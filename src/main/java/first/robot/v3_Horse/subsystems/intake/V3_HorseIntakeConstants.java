@@ -21,9 +21,11 @@ import edu.wpi.team190.gompeilib.robot.common.homing.CurrentHoming;
 import edu.wpi.team190.gompeilib.robot.mechanisms.extension.ExtensionConstants;
 import edu.wpi.team190.gompeilib.robot.mechanisms.extension.ExtensionConstants.ExtensionParameters;
 import edu.wpi.team190.gompeilib.robot.mechanisms.roller.GenericRollerConstants;
+import edu.wpi.team190.gompeilib.tuning.GompeiTunables;
 import java.util.Map;
 import org.wpilib.hardware.bus.CANPort;
 import org.wpilib.math.system.DCMotor;
+import org.wpilib.tunable.Tunable;
 import org.wpilib.units.DistanceUnit;
 import org.wpilib.units.Units;
 import org.wpilib.units.VoltageUnit;
@@ -83,6 +85,8 @@ public class V3_HorseIntakeConstants {
 
   public static final Voltage EXTENSION_SLOW_MOVE_VOLTAGE;
 
+  public static final Tunable<Voltage> SQUISH_VOLTAGE;
+
   static {
     INTAKE_IN_ROLLER_VOLTAGE = Volts.of(11.0);
     INTAKE_OUT_ROLLER_VOLTAGE = Volts.of(-12.0);
@@ -90,6 +94,8 @@ public class V3_HorseIntakeConstants {
     KICKER_OUT_ROLLER_VOLTAGE = Volts.of(-12.0);
     IDLE_ROLLER_VOLTAGE = Volts.of(5.0); // TODO: tune
     EXTENSION_SLOW_MOVE_VOLTAGE = Volts.of(1.0);
+
+    SQUISH_VOLTAGE = GompeiTunables.value("Intake/Squish Voltage", Volts.of(-1));
 
     // The right roller is on another bus, so it mirrors the left roller instead of following it.
     INTAKE_ROLLER_CONSTANTS =
