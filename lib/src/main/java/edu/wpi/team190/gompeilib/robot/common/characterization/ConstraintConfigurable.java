@@ -2,14 +2,14 @@ package edu.wpi.team190.gompeilib.robot.common.characterization;
 
 import edu.wpi.team190.gompeilib.control.constraints.Constraints;
 import edu.wpi.team190.gompeilib.io.motor.config.MotionProfileConfig;
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 
 /**
  * A mechanism whose profile limits come from a constraints object.
  *
  * @param <C> the constraints type
  */
-public interface ConstraintConfigurable<C extends Constraints<C>> extends Mechanism {
+public interface ConstraintConfigurable<C extends Constraints<C>> extends GompeiMechanism {
   /**
    * Builds the motors' motion profile from the mechanism's constraints.
    *

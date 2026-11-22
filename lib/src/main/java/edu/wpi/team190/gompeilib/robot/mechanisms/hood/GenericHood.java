@@ -6,7 +6,7 @@ import edu.wpi.team190.gompeilib.logging.Trace;
 import edu.wpi.team190.gompeilib.robot.common.homing.CurrentHoming;
 import edu.wpi.team190.gompeilib.robot.mechanisms.arm.ArmConstants;
 import edu.wpi.team190.gompeilib.robot.mechanisms.arm.HomingArm;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.VoltageUnit;
 
@@ -16,7 +16,7 @@ public class GenericHood extends HomingArm {
    * Creates a hood.
    *
    * @param motorFactory how to build the hood's motors
-   * @param subsystem the subsystem that owns the hood, for its log prefix
+   * @param subsystem the robot mechanism that owns the hood
    * @param name the hood's name; it logs under {@code <subsystem>/<name>}
    * @param constants the hood's constants
    * @param homing how the hood homes
@@ -25,7 +25,7 @@ public class GenericHood extends HomingArm {
    */
   public GenericHood(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       CurrentHoming.Config<AngleUnit> homing,

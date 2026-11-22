@@ -14,7 +14,7 @@ import edu.wpi.team190.gompeilib.robot.common.openloop.DutyCycleControllable;
 import edu.wpi.team190.gompeilib.robot.common.openloop.OpenLoopControl;
 import edu.wpi.team190.gompeilib.robot.common.openloop.OpenLoopControls;
 import edu.wpi.team190.gompeilib.robot.common.openloop.VoltageControllable;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.DimensionlessUnit;
 import org.wpilib.units.VoltageUnit;
@@ -32,14 +32,14 @@ public class GenericRoller
    * Creates a roller.
    *
    * @param motorFactory how to build the roller's motors
-   * @param subsystem the subsystem that owns the roller, for its log prefix
+   * @param subsystem the robot mechanism that owns this one, for its log prefix
    * @param constants the roller's constants
    * @param name the roller's name; it logs under {@code <subsystem>/<name>}
    * @param voltageGoal the initial voltage goal
    */
   public GenericRoller(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       GenericRollerConstants constants,
       String name,
       Setpoint<VoltageUnit> voltageGoal) {
@@ -59,13 +59,13 @@ public class GenericRoller
    * Creates a roller with a 0 V goal, limited to ±12 V.
    *
    * @param motorFactory how to build the roller's motors
-   * @param subsystem the subsystem that owns the roller, for its log prefix
+   * @param subsystem the robot mechanism that owns this one, for its log prefix
    * @param constants the roller's constants
    * @param name the roller's name; it logs under {@code <subsystem>/<name>}
    */
   public GenericRoller(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       GenericRollerConstants constants,
       String name) {
     this(

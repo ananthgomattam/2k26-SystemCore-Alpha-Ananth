@@ -6,7 +6,7 @@ import edu.wpi.team190.gompeilib.io.motor.outputs.Feedforward;
 import edu.wpi.team190.gompeilib.io.motor.outputs.OutputType;
 import edu.wpi.team190.gompeilib.io.motor.outputs.ProfileMode;
 import edu.wpi.team190.gompeilib.io.motor.outputs.RequestOptions;
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 import org.wpilib.command2.Command;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
@@ -16,7 +16,7 @@ import org.wpilib.units.Unit;
  *
  * @param <P> the mechanism's position unit
  */
-public interface PositionControllable<P extends Unit> extends Mechanism {
+public interface PositionControllable<P extends Unit> extends GompeiMechanism {
   /**
    * Returns the mechanism's position control.
    *

@@ -12,7 +12,7 @@ import org.wpilib.units.measure.Current;
  * A mechanism built on a {@link MechanismCore}. Every other capability extends this one; what a
  * mechanism can be told to do is the set of capabilities it implements.
  */
-public interface Mechanism {
+public interface GompeiMechanism {
   /**
    * Returns the mechanism's core.
    *

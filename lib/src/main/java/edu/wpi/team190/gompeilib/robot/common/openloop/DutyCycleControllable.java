@@ -3,12 +3,12 @@ package edu.wpi.team190.gompeilib.robot.common.openloop;
 import static org.wpilib.units.Units.Value;
 
 import edu.wpi.team190.gompeilib.control.Setpoint;
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 import org.wpilib.units.DimensionlessUnit;
 import org.wpilib.units.Measure;
 
 /** A mechanism that can be driven open-loop at a duty cycle. */
-public interface DutyCycleControllable extends Mechanism {
+public interface DutyCycleControllable extends GompeiMechanism {
   /**
    * Returns the mechanism's duty cycle control.
    *

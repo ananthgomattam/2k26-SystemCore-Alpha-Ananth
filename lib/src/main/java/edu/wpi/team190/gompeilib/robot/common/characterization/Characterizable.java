@@ -5,7 +5,7 @@ import edu.wpi.team190.gompeilib.characterization.CharacterizationConstraint;
 import edu.wpi.team190.gompeilib.characterization.CharacterizationRoutine;
 import edu.wpi.team190.gompeilib.io.motor.config.GravityType;
 import edu.wpi.team190.gompeilib.io.motor.outputs.MotorRequest;
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 import edu.wpi.team190.gompeilib.robot.common.openloop.OpenLoopControl;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +25,7 @@ import org.wpilib.units.measure.Distance;
  * linearly overrides {@link #characterizationDistancePerRadian()} so the report prints gains per
  * meter.
  */
-public interface Characterizable extends Mechanism {
+public interface Characterizable extends GompeiMechanism {
   /**
    * Returns the travel the routine must keep the mechanism inside.
    *

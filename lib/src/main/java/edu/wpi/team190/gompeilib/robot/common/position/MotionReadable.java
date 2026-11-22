@@ -1,6 +1,6 @@
 package edu.wpi.team190.gompeilib.robot.common.position;
 
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 import edu.wpi.team190.gompeilib.robot.common.core.MechanismConversion;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
@@ -11,7 +11,7 @@ import org.wpilib.units.Unit;
  * @param <P> the mechanism's position unit
  * @param <V> the mechanism's velocity unit
  */
-public interface MotionReadable<P extends Unit, V extends Unit> extends Mechanism {
+public interface MotionReadable<P extends Unit, V extends Unit> extends GompeiMechanism {
   /**
    * Returns the mechanism's conversion to the motors' gearbox output.
    *

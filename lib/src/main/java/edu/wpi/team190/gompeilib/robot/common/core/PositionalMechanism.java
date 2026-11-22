@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.wpilib.command2.Command;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.DimensionlessUnit;
 import org.wpilib.units.Measure;
@@ -89,7 +89,8 @@ public abstract class PositionalMechanism<
    *
    * @param motorFactory how to build the motors
    * @param motor the leader's config, with its slots, soft limits, and motion profile
-   * @param subsystem the subsystem that owns the mechanism, for its log prefix
+   * @param subsystem the robot mechanism that owns this one, for the commands that use this
+   *     mechanism
    * @param name the mechanism's name; it logs under {@code <subsystem>/<name>}
    * @param conversion the conversion between the mechanism's units and the gearbox output
    * @param constraints the tunable constraints, whose edits rebuild the motion profile
@@ -105,7 +106,7 @@ public abstract class PositionalMechanism<
   protected PositionalMechanism(
       MotorIOFactory motorFactory,
       MotorConfig motor,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       MechanismConversion<P, V, A> conversion,
       C constraints,

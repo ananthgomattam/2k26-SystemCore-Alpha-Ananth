@@ -6,7 +6,7 @@ import edu.wpi.team190.gompeilib.io.motor.outputs.Feedforward;
 import edu.wpi.team190.gompeilib.io.motor.outputs.OutputType;
 import edu.wpi.team190.gompeilib.io.motor.outputs.RequestOptions;
 import edu.wpi.team190.gompeilib.io.motor.outputs.VelocityProfileMode;
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 import org.wpilib.command2.Command;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
@@ -17,7 +17,7 @@ import org.wpilib.units.Unit;
  *
  * @param <V> the mechanism's velocity unit
  */
-public interface VelocityControllable<V extends Unit> extends Mechanism {
+public interface VelocityControllable<V extends Unit> extends GompeiMechanism {
   /**
    * Returns the mechanism's velocity control.
    *

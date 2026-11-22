@@ -6,7 +6,7 @@ import edu.wpi.team190.gompeilib.logging.Trace;
 import edu.wpi.team190.gompeilib.robot.common.homing.CurrentHoming;
 import edu.wpi.team190.gompeilib.robot.common.homing.Homeable;
 import java.util.Objects;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.VoltageUnit;
 
@@ -18,7 +18,7 @@ public class HomingArm extends Arm implements Homeable {
    * Creates a homing arm.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param homing how the arm homes
@@ -27,7 +27,7 @@ public class HomingArm extends Arm implements Homeable {
    */
   public HomingArm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       CurrentHoming.Config<AngleUnit> homing,
@@ -47,14 +47,14 @@ public class HomingArm extends Arm implements Homeable {
    * Creates a homing arm with a position goal at zero limited to its travel and a 0 V goal.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param homing how the arm homes
    */
   public HomingArm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       CurrentHoming.Config<AngleUnit> homing) {
@@ -65,7 +65,7 @@ public class HomingArm extends Arm implements Homeable {
    * Creates a homing arm with a 0 V goal.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param homing how the arm homes
@@ -73,7 +73,7 @@ public class HomingArm extends Arm implements Homeable {
    */
   public HomingArm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       CurrentHoming.Config<AngleUnit> homing,

@@ -6,7 +6,7 @@ import edu.wpi.team190.gompeilib.logging.Trace;
 import edu.wpi.team190.gompeilib.robot.common.homing.CurrentHoming;
 import edu.wpi.team190.gompeilib.robot.common.homing.Homeable;
 import java.util.Objects;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.DistanceUnit;
 import org.wpilib.units.VoltageUnit;
 
@@ -18,7 +18,7 @@ public class HomingExtension extends Extension implements Homeable {
    * Creates a homing extension.
    *
    * @param motorFactory how to build the extension's motors
-   * @param subsystem the subsystem that owns the extension, for its log prefix
+   * @param subsystem the robot mechanism that owns the extension
    * @param name the extension's name; it logs under {@code <subsystem>/<name>}
    * @param constants the extension's constants
    * @param homing how the extension homes
@@ -27,7 +27,7 @@ public class HomingExtension extends Extension implements Homeable {
    */
   public HomingExtension(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ExtensionConstants constants,
       CurrentHoming.Config<DistanceUnit> homing,
@@ -47,14 +47,14 @@ public class HomingExtension extends Extension implements Homeable {
    * Creates a homing extension with a position goal at zero, limited to its travel, and a 0 V goal.
    *
    * @param motorFactory how to build the extension's motors
-   * @param subsystem the subsystem that owns the extension, for its log prefix
+   * @param subsystem the robot mechanism that owns the extension
    * @param name the extension's name; it logs under {@code <subsystem>/<name>}
    * @param constants the extension's constants
    * @param homing how the extension homes
    */
   public HomingExtension(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ExtensionConstants constants,
       CurrentHoming.Config<DistanceUnit> homing) {
@@ -65,7 +65,7 @@ public class HomingExtension extends Extension implements Homeable {
    * Creates a homing extension with a 0 V goal.
    *
    * @param motorFactory how to build the extension's motors
-   * @param subsystem the subsystem that owns the extension, for its log prefix
+   * @param subsystem the robot mechanism that owns the extension
    * @param name the extension's name; it logs under {@code <subsystem>/<name>}
    * @param constants the extension's constants
    * @param homing how the extension homes
@@ -73,7 +73,7 @@ public class HomingExtension extends Extension implements Homeable {
    */
   public HomingExtension(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ExtensionConstants constants,
       CurrentHoming.Config<DistanceUnit> homing,

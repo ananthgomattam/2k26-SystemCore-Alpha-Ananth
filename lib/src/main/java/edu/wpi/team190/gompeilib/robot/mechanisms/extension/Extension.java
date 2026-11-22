@@ -15,10 +15,9 @@ import edu.wpi.team190.gompeilib.io.physics.PlantMechanismSim;
 import edu.wpi.team190.gompeilib.logging.Trace;
 import edu.wpi.team190.gompeilib.robot.common.core.MechanismConversion;
 import edu.wpi.team190.gompeilib.robot.common.core.PositionalMechanism;
-import edu.wpi.team190.gompeilib.robot.common.core.PositionalMechanism.Travel;
 import java.util.Optional;
 import lombok.Getter;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.DistanceUnit;
 import org.wpilib.units.LinearAccelerationUnit;
 import org.wpilib.units.LinearVelocityUnit;
@@ -41,7 +40,7 @@ public class Extension
    * Creates an extension.
    *
    * @param motorFactory how to build the extension's motors
-   * @param subsystem the subsystem that owns the extension, for its log prefix
+   * @param subsystem the robot mechanism that owns the extension
    * @param name the extension's name; it logs under {@code <subsystem>/<name>}
    * @param constants the extension's constants
    * @param positionGoal the initial position goal
@@ -51,7 +50,7 @@ public class Extension
    */
   public Extension(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ExtensionConstants constants,
       Setpoint<DistanceUnit> positionGoal,
@@ -82,12 +81,12 @@ public class Extension
    * Creates an extension with a position goal at zero, limited to its travel, and a 0 V goal.
    *
    * @param motorFactory how to build the extension's motors
-   * @param subsystem the subsystem that owns the extension, for its log prefix
+   * @param subsystem the robot mechanism that owns the extension
    * @param name the extension's name; it logs under {@code <subsystem>/<name>}
    * @param constants the extension's constants
    */
   public Extension(
-      MotorIOFactory motorFactory, Subsystem subsystem, String name, ExtensionConstants constants) {
+      MotorIOFactory motorFactory, Mechanism subsystem, String name, ExtensionConstants constants) {
     this(motorFactory, subsystem, name, constants, defaultPositionGoal(constants));
   }
 
@@ -95,14 +94,14 @@ public class Extension
    * Creates an extension with a 0 V goal.
    *
    * @param motorFactory how to build the extension's motors
-   * @param subsystem the subsystem that owns the extension, for its log prefix
+   * @param subsystem the robot mechanism that owns the extension
    * @param name the extension's name; it logs under {@code <subsystem>/<name>}
    * @param constants the extension's constants
    * @param positionGoal the initial position goal
    */
   public Extension(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ExtensionConstants constants,
       Setpoint<DistanceUnit> positionGoal) {

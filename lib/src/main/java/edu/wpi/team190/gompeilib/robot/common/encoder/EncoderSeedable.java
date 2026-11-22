@@ -1,9 +1,9 @@
 package edu.wpi.team190.gompeilib.robot.common.encoder;
 
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 
 /** A mechanism that can seed its motors' position from an absolute encoder. */
-public interface EncoderSeedable extends Mechanism {
+public interface EncoderSeedable extends GompeiMechanism {
   /**
    * Returns the mechanism's encoder seed.
    *

@@ -1,12 +1,12 @@
 package edu.wpi.team190.gompeilib.robot.common.openloop;
 
 import edu.wpi.team190.gompeilib.control.Setpoint;
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.measure.Current;
 
 /** A mechanism that can be driven open-loop at a torque current. */
-public interface CurrentControllable extends Mechanism {
+public interface CurrentControllable extends GompeiMechanism {
   /**
    * Returns the mechanism's current control.
    *

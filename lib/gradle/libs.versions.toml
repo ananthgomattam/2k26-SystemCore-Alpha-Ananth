@@ -25,8 +25,7 @@ wpilib-cscore = { group = "org.wpilib.cscore", name = "cscore-java", version.ref
 wpilib-cameraserver = { group = "org.wpilib.cameraserver", name = "cameraserver-java", version.ref = "wpilib" }
 wpilib-wpiutil = { group = "org.wpilib.wpiutil", name = "wpiutil-java", version.ref = "wpilib" }
 wpilib-wpiunits = { group = "org.wpilib.wpiunits", name = "wpiunits-java", version.ref = "wpilib" }
-# WPILibNewCommands was replaced by the standalone Commands V2 vendordep/artifact in 2027.
-wpilib-commands = { group = "org.wpilib.commandsv2", name = "commandsv2-java", version.ref = "wpilib" }
+wpilib-commands = { group = "org.wpilib", name = "commandsv3-java", version.ref = "wpilib" }
 wpilib-hal = { group = "org.wpilib.hal", name = "hal-java", version.ref = "wpilib" }
 wpilib-apriltag = {group = "org.wpilib.apriltag", name="apriltag-java", version.ref = "wpilib"}
 wpilib-fields = { group = "org.wpilib.fields", name = "fields-java", version.ref = "wpilib" }

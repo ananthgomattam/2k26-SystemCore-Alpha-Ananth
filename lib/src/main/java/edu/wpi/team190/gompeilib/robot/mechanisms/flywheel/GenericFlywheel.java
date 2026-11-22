@@ -30,7 +30,7 @@ import edu.wpi.team190.gompeilib.robot.common.position.MotionReadable;
 import edu.wpi.team190.gompeilib.robot.common.velocity.VelocityControl;
 import edu.wpi.team190.gompeilib.robot.common.velocity.VelocityControllable;
 import org.wpilib.command2.Command;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularAccelerationUnit;
 import org.wpilib.units.AngularVelocityUnit;
@@ -71,7 +71,7 @@ public class GenericFlywheel
    * Creates a flywheel. It starts idle.
    *
    * @param motorFactory how to build the flywheel's motors
-   * @param subsystem the subsystem that owns the flywheel, for its log prefix
+   * @param subsystem the robot mechanism that owns the flywheel
    * @param constants the flywheel's constants
    * @param name the flywheel's name; it logs under {@code <subsystem>/<name>}
    * @param velocityGoal the initial velocity goal
@@ -79,7 +79,7 @@ public class GenericFlywheel
    */
   public GenericFlywheel(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       GenericFlywheelConstants constants,
       String name,
       Setpoint<AngularVelocityUnit> velocityGoal,
@@ -120,13 +120,13 @@ public class GenericFlywheel
    * Creates a flywheel with zero velocity and voltage goals.
    *
    * @param motorFactory how to build the flywheel's motors
-   * @param subsystem the subsystem that owns the flywheel, for its log prefix
+   * @param subsystem the robot mechanism that owns the flywheel
    * @param constants the flywheel's constants
    * @param name the flywheel's name; it logs under {@code <subsystem>/<name>}
    */
   public GenericFlywheel(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       GenericFlywheelConstants constants,
       String name) {
     this(
@@ -146,14 +146,14 @@ public class GenericFlywheel
    * Creates a flywheel with a zero voltage goal.
    *
    * @param motorFactory how to build the flywheel's motors
-   * @param subsystem the subsystem that owns the flywheel, for its log prefix
+   * @param subsystem the robot mechanism that owns the flywheel
    * @param constants the flywheel's constants
    * @param name the flywheel's name; it logs under {@code <subsystem>/<name>}
    * @param velocityGoal the initial velocity goal
    */
   public GenericFlywheel(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       GenericFlywheelConstants constants,
       String name,
       Setpoint<AngularVelocityUnit> velocityGoal) {

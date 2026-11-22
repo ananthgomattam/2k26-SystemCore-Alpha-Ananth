@@ -1,12 +1,12 @@
 package edu.wpi.team190.gompeilib.robot.common.openloop;
 
 import edu.wpi.team190.gompeilib.control.Setpoint;
-import edu.wpi.team190.gompeilib.robot.common.core.Mechanism;
+import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
 import org.wpilib.units.VoltageUnit;
 import org.wpilib.units.measure.Voltage;
 
 /** A mechanism that can be driven open-loop at a voltage. */
-public interface VoltageControllable extends Mechanism {
+public interface VoltageControllable extends GompeiMechanism {
   /**
    * Returns the mechanism's voltage control.
    *

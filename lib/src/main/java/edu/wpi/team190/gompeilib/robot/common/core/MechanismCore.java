@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 
 /**
  * The shared core of a mechanism: its motors, its log topic, and which control is driving it.
@@ -55,7 +55,7 @@ public final class MechanismCore {
   }
 
   @Getter private final MotorControllerGroup motors;
-  @Getter private final Subsystem subsystem;
+  @Getter private final Mechanism subsystem;
   @Getter private final String topic;
   private final List<Component> components = new ArrayList<>();
 
@@ -66,10 +66,10 @@ public final class MechanismCore {
    * Creates a core whose log topic is {@code <subsystem>/<name>}. It starts idle.
    *
    * @param motors the mechanism's motors
-   * @param subsystem the subsystem that owns the mechanism
+   * @param subsystem the robot mechanism that owns this one
    * @param name the mechanism's name
    */
-  public MechanismCore(MotorControllerGroup motors, Subsystem subsystem, String name) {
+  public MechanismCore(MotorControllerGroup motors, Mechanism subsystem, String name) {
     this.motors = Objects.requireNonNull(motors, "motors");
     this.subsystem = Objects.requireNonNull(subsystem, "subsystem");
     this.topic = subsystem.getName() + "/" + Objects.requireNonNull(name, "name");

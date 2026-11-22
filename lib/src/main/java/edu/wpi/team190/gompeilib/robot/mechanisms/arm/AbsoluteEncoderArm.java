@@ -6,7 +6,7 @@ import edu.wpi.team190.gompeilib.io.motor.interfaces.MotorIOFactory;
 import edu.wpi.team190.gompeilib.logging.Trace;
 import edu.wpi.team190.gompeilib.robot.common.encoder.EncoderSeed;
 import edu.wpi.team190.gompeilib.robot.common.encoder.EncoderSeedable;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.VoltageUnit;
 
@@ -21,7 +21,7 @@ public class AbsoluteEncoderArm extends Arm implements EncoderSeedable {
    * Creates an arm with an absolute encoder.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param encoder the absolute encoder on the arm's output
@@ -30,7 +30,7 @@ public class AbsoluteEncoderArm extends Arm implements EncoderSeedable {
    */
   public AbsoluteEncoderArm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       AbsoluteEncoderIO encoder,
@@ -45,14 +45,14 @@ public class AbsoluteEncoderArm extends Arm implements EncoderSeedable {
    * V goal.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param encoder the absolute encoder on the arm's output
    */
   public AbsoluteEncoderArm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       AbsoluteEncoderIO encoder) {
@@ -63,7 +63,7 @@ public class AbsoluteEncoderArm extends Arm implements EncoderSeedable {
    * Creates an arm with an absolute encoder and a 0 V goal.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param encoder the absolute encoder on the arm's output
@@ -71,7 +71,7 @@ public class AbsoluteEncoderArm extends Arm implements EncoderSeedable {
    */
   public AbsoluteEncoderArm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       AbsoluteEncoderIO encoder,

@@ -1,6 +1,7 @@
 package edu.wpi.team190.gompeilib.robot.mechanisms.arm;
 
-import static org.wpilib.units.Units.*;
+import static org.wpilib.units.Units.Radians;
+import static org.wpilib.units.Units.Volts;
 
 import edu.wpi.team190.gompeilib.control.Setpoint;
 import edu.wpi.team190.gompeilib.control.constraints.AngularPositionConstraints;
@@ -12,9 +13,8 @@ import edu.wpi.team190.gompeilib.io.physics.PlantMechanismSim;
 import edu.wpi.team190.gompeilib.logging.Trace;
 import edu.wpi.team190.gompeilib.robot.common.core.MechanismConversion;
 import edu.wpi.team190.gompeilib.robot.common.core.PositionalMechanism;
-import edu.wpi.team190.gompeilib.robot.common.core.PositionalMechanism.Travel;
 import java.util.Optional;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularAccelerationUnit;
 import org.wpilib.units.AngularVelocityUnit;
@@ -35,7 +35,7 @@ public class Arm
    * Creates an arm.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param positionGoal the initial position goal
@@ -43,7 +43,7 @@ public class Arm
    */
   public Arm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       Setpoint<AngleUnit> positionGoal,
@@ -73,12 +73,12 @@ public class Arm
    * Creates an arm with a position goal at zero limited to its travel and a 0 V goal.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    */
   public Arm(
-      MotorIOFactory motorFactory, Subsystem subsystem, String name, ArmConstants constants) {
+      MotorIOFactory motorFactory, Mechanism subsystem, String name, ArmConstants constants) {
     this(motorFactory, subsystem, name, constants, defaultPositionGoal(constants));
   }
 
@@ -86,14 +86,14 @@ public class Arm
    * Creates an arm with a 0 V goal.
    *
    * @param motorFactory how to build the arm's motors
-   * @param subsystem the subsystem that owns the arm, for its log prefix
+   * @param subsystem the robot mechanism that owns the arm
    * @param name the arm's name; it logs under {@code <subsystem>/<name>}
    * @param constants the arm's constants
    * @param positionGoal the initial position goal
    */
   public Arm(
       MotorIOFactory motorFactory,
-      Subsystem subsystem,
+      Mechanism subsystem,
       String name,
       ArmConstants constants,
       Setpoint<AngleUnit> positionGoal) {
