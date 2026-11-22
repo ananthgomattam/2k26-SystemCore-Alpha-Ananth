@@ -37,7 +37,8 @@ public final class V3_HorseDriveCommands {
    * Whether school bus drive should turn the robot this loop: it's toggled on and the left stick is
    * pushed past the school bus deadband.
    */
-  public static BooleanSupplier schoolBusActive(DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+  public static BooleanSupplier schoolBusActive(
+      DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
     return () ->
         schoolBusEnabled
             && Math.hypot(xSupplier.getAsDouble(), ySupplier.getAsDouble())

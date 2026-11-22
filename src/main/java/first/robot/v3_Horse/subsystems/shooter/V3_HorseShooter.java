@@ -24,11 +24,11 @@ import org.wpilib.command2.Command;
 import org.wpilib.command2.Commands;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
+import org.wpilib.driverstation.MatchState;
 import org.wpilib.math.util.Units;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularVelocityUnit;
 import org.wpilib.units.VoltageUnit;
-import org.wpilib.driverstation.MatchState;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 
@@ -182,12 +182,12 @@ public class V3_HorseShooter extends SubsystemBase {
                 : Amps.zero())
             : Amps.zero());
   }
+
   private AngularVelocity getIdleVelocity() {
     return V3_HorseRobotState.isInAllianceZone()
         ? V3_HorseRobotState.getScoreVelocity().times(0.9)
         : V3_HorseRobotState.FixedShots.FRONT_TOWER.getParameters().flywheelSpeed().get();
   }
-
 
   public Command setGoal(ShooterGoal shooterGoal) {
     return this.runOnce(() -> this.shooterGoal = shooterGoal);
