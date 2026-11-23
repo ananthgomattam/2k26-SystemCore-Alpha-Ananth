@@ -1,6 +1,5 @@
 package edu.wpi.team190.gompeilib.robot.common.position;
 
-import edu.wpi.team190.gompeilib.GompeiLib;
 import edu.wpi.team190.gompeilib.control.Setpoint;
 import edu.wpi.team190.gompeilib.io.motor.config.GainSlot;
 import edu.wpi.team190.gompeilib.io.motor.outputs.Feedforward;
@@ -16,8 +15,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
+import org.wpilib.command3.Command;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
 
@@ -215,8 +213,12 @@ public final class PositionControl<P extends Unit> implements MechanismCore.Cont
    * @return the command
    */
   public Command waitUntilAtGoal() {
-    return Commands.waitSeconds(GompeiLib.getLoopPeriod())
-        .andThen(Commands.waitUntil(this::atGoal));
+    return Command.noRequirements(
+            coroutine -> {
+              coroutine.yield();
+              coroutine.waitUntil(this::atGoal);
+            })
+        .named(core.getTopic() + ": Wait Until At Position");
   }
 
   @Override

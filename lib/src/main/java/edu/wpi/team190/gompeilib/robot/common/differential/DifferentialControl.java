@@ -16,8 +16,7 @@ import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
+import org.wpilib.command3.Command;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
 
@@ -237,7 +236,7 @@ public final class DifferentialControl<AvgUnit extends Unit, DiffUnit extends Un
 
   /** Returns a command that completes once both goals are reached. */
   public Command waitUntilAtGoals() {
-    return Commands.waitUntil(this::atGoals);
+    return Command.waitUntil(this::atGoals).named(core.getTopic() + ": Wait Until Difference Goal");
   }
 
   @Override

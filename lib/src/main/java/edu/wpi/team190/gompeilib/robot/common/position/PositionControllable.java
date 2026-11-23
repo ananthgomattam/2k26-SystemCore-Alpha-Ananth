@@ -7,7 +7,7 @@ import edu.wpi.team190.gompeilib.io.motor.outputs.OutputType;
 import edu.wpi.team190.gompeilib.io.motor.outputs.ProfileMode;
 import edu.wpi.team190.gompeilib.io.motor.outputs.RequestOptions;
 import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
 
