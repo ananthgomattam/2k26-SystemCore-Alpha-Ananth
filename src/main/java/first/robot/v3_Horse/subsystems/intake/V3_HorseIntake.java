@@ -1,6 +1,7 @@
 package first.robot.v3_Horse.subsystems.intake;
 
 import static org.wpilib.units.Units.Meters;
+import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
 import edu.wpi.team190.gompeilib.characterization.CharacterizationConfig;
@@ -17,14 +18,14 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
-import org.wpilib.command2.SubsystemBase;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Mechanism;
+import org.wpilib.command3.Scheduler;
 import org.wpilib.units.DistanceUnit;
 import org.wpilib.units.Unit;
 import org.wpilib.units.measure.Distance;
 
-public class V3_HorseIntake extends SubsystemBase {
+public class V3_HorseIntake implements Mechanism {
 
   @Getter private ExtensionState extensionState;
   @Getter private RollerState rollerState;
@@ -60,7 +61,6 @@ public class V3_HorseIntake extends SubsystemBase {
       MotorIOFactory leftExtensionMotors,
       MotorIOFactory rightExtensionMotors,
       DoubleSupplier triggerSupplier) {
-    setName("Intake");
 
     extensionState = ExtensionState.STOW;
     rollerState = RollerState.STOP;
@@ -120,10 +120,11 @@ public class V3_HorseIntake extends SubsystemBase {
     rightCompliant = false;
     leftGainSlot = GainSlot.ZERO;
     rightGainSlot = GainSlot.ZERO;
+
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   @Trace
-  @Override
   public void periodic() {
     // A characterization drives the extensions itself
     if (!characterizing) {
@@ -148,7 +149,8 @@ public class V3_HorseIntake extends SubsystemBase {
         linearExtensionMap().in(Meters)
             <= V3_HorseIntakeConstants.EXTENSION_STOW_POSITION
                 + V3_HorseIntakeConstants.AGITATE_AUTO_STOW_THRESHOLD;
-    // Remembers whether this press reached the stow point, so release can stow even if the
+    // Remembers whether this press reached the stow point, so release can stow even
+    // if the
     // intake hasn't physically gotten there yet.
     manualReachedStow =
         extensionState == ExtensionState.MANUAL_EXTEND && (manualReachedStow || triggerAtStow);
@@ -199,7 +201,8 @@ public class V3_HorseIntake extends SubsystemBase {
     return position;
   }
 
-  // Firm (ZERO) while driving to a new goal, then compliant (ONE) until the state changes, so
+  // Firm (ZERO) while driving to a new goal, then compliant (ONE) until the state
+  // changes, so
   // getting pushed off the goal doesn't make it fight back.
   private void updateGainSlots() {
     boolean holdingGoal = extensionState == ExtensionState.INTAKE;
@@ -212,8 +215,10 @@ public class V3_HorseIntake extends SubsystemBase {
     }
     previousExtensionState = extensionState;
 
-    // setGainSlot sends a position request, so only touch it in closed loop states. STOW and
-    // MANUAL_EXTEND still need it so a compliant slot left over from INTAKE gets cleared.
+    // setGainSlot sends a position request, so only touch it in closed loop states.
+    // STOW and
+    // MANUAL_EXTEND still need it so a compliant slot left over from INTAKE gets
+    // cleared.
     if (holdingGoal
         || extensionState == ExtensionState.STOW
         || extensionState == ExtensionState.MANUAL_EXTEND) {
@@ -234,66 +239,67 @@ public class V3_HorseIntake extends SubsystemBase {
   }
 
   public Command stopRollers() {
-    return Commands.runOnce(
-        () -> {
-          rollerState = RollerState.STOP;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              rollerState = RollerState.STOP;
+            })
+        .named("Intake Rollers: Set State To STOP");
   }
 
   public Command intakeRollers() {
-    return Commands.runOnce(
-        () -> {
-          rollerState = RollerState.INTAKE;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              rollerState = RollerState.INTAKE;
+            })
+        .named("Intake Rollers: Set State To INTAKE");
   }
 
   public Command extakeRollers() {
-    return Commands.runOnce(
-        () -> {
-          rollerState = RollerState.EXTAKE;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              rollerState = RollerState.EXTAKE;
+            })
+        .named("Intake Rollers: Set State To EXTAKE");
   }
 
   public Command extend() {
-    return Commands.runOnce(
-        () -> {
-          extensionState = ExtensionState.INTAKE;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              extensionState = ExtensionState.INTAKE;
+            })
+        .named("Extension: Set State To INTAKE");
   }
 
   public Command retract() {
-    return Commands.runOnce(
-        () -> {
-          extensionState = ExtensionState.STOW;
-        });
-  }
-
-  public Command stowExtension() {
-    return Commands.runOnce(
-        () -> {
-          extensionState = ExtensionState.STOW;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              extensionState = ExtensionState.STOW;
+            })
+        .named("Extension: Set State To STOW");
   }
 
   public Command setExtensionState(ExtensionState state) {
-    return Commands.runOnce(
-        () -> {
-          extensionState = state;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              extensionState = state;
+            })
+        .named("Extension: Set State To " + state);
   }
 
   public Command setRollerState(RollerState state) {
-    return Commands.runOnce(
-        () -> {
-          rollerState = state;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              rollerState = state;
+            })
+        .named("Intake Rollers: Set State To " + state);
   }
 
   public Command setManualExtendState() {
-    return Commands.runOnce(
-        () -> {
-          extensionState = ExtensionState.MANUAL_EXTEND;
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              extensionState = ExtensionState.MANUAL_EXTEND;
+            })
+        .named("Extension: Set State To MANUAL_EXTEND");
   }
 
   /**
@@ -301,92 +307,101 @@ public class V3_HorseIntake extends SubsystemBase {
    * the stow point during this press, otherwise goes back out to intake.
    */
   public Command releaseManualExtend() {
-    return Commands.runOnce(
-        () -> {
-          if (extensionState == ExtensionState.MANUAL_EXTEND) {
-            extensionState = manualReachedStow ? ExtensionState.STOW : ExtensionState.INTAKE;
-          }
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              if (extensionState == ExtensionState.MANUAL_EXTEND) {
+                extensionState = manualReachedStow ? ExtensionState.STOW : ExtensionState.INTAKE;
+              }
+            })
+        .named("Extension: Release Manual Extend");
   }
 
   public Command zeroExtensions() {
-    return Commands.sequence(
-            Commands.runOnce(() -> rollerState = RollerState.STOP),
-            Commands.runOnce(() -> extensionState = ExtensionState.ZERO),
-            Commands.parallel(leftExtension.home(), rightExtension.home()),
-            Commands.runOnce(() -> extensionState = ExtensionState.STOW))
-        .finallyDo(
-            interrupted -> {
-              // Not zeroed, so don't trust position control; stop driving into the hard stop.
-              if (interrupted) {
-                extensionState = ExtensionState.STOP;
-                leftExtension.setVoltageGoal(Volts.zero());
-                rightExtension.setVoltageGoal(Volts.zero());
-              }
-            });
+    return Command.noRequirements(
+            coroutine -> {
+              rollerState = RollerState.STOP;
+              extensionState = ExtensionState.ZERO;
+              coroutine.awaitAll(leftExtension.home(), rightExtension.home());
+              extensionState = ExtensionState.STOW;
+            })
+        .whenCanceled(
+            () -> {
+              extensionState = ExtensionState.STOP;
+              leftExtension.setVoltageGoal(Volts.zero());
+              rightExtension.setVoltageGoal(Volts.zero());
+            })
+        .named("Extension: Home To STOW Hard Stop");
   }
 
   public Command resetIntakeZeroPosition() {
-    return Commands.runOnce(
-            () -> {
+    return Command.noRequirements(
+            coroutine -> {
               leftExtension.setPosition(Meters.of(V3_HorseIntakeConstants.MIN_EXTENSION));
               rightExtension.setPosition(Meters.of(V3_HorseIntakeConstants.MIN_EXTENSION));
               extensionState = ExtensionState.STOW;
             })
-        .ignoringDisable(true);
+        .named("Extension: Reset Zero Position");
   }
 
   public Command slowMoveIn() {
-    return Commands.runOnce(
-        () -> {
-          extensionState = ExtensionState.SLOW_MOVE;
-          leftExtension.setVoltageGoal(
-              V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE.times(-1));
-          rightExtension.setVoltageGoal(
-              V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE.times(-1));
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              extensionState = ExtensionState.SLOW_MOVE;
+              leftExtension.setVoltageGoal(
+                  V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE.times(-1));
+              rightExtension.setVoltageGoal(
+                  V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE.times(-1));
+            })
+        .named("Extension: Slow Move In");
   }
 
   public Command slowMoveOut() {
-    return Commands.runOnce(
-        () -> {
-          extensionState = ExtensionState.SLOW_MOVE;
-          leftExtension.setVoltageGoal(V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE);
-          rightExtension.setVoltageGoal(V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE);
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              extensionState = ExtensionState.SLOW_MOVE;
+              leftExtension.setVoltageGoal(V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE);
+              rightExtension.setVoltageGoal(V3_HorseIntakeConstants.EXTENSION_SLOW_MOVE_VOLTAGE);
+            })
+        .named("Extension: Slow Move Out");
   }
 
   public Command stopExtensions() {
-    return Commands.runOnce(
-        () -> {
-          extensionState = ExtensionState.STOP;
-          leftExtension.setVoltageGoal(Volts.zero());
-          rightExtension.setVoltageGoal(Volts.zero());
-        });
+    return Command.noRequirements(
+            coroutine -> {
+              extensionState = ExtensionState.STOP;
+              leftExtension.setVoltageGoal(Volts.zero());
+              rightExtension.setVoltageGoal(Volts.zero());
+            })
+        .named("Extension: Stop Extensions");
   }
 
   public Command squishIntake() {
-    return Commands.sequence(
-            Commands.runOnce(
-                () -> {
-                  if (extensionState == ExtensionState.MANUAL_EXTEND
-                      || extensionState == ExtensionState.STOW) {
-                    return;
-                  }
-                  extensionState = ExtensionState.SQUISH;
-                  leftExtension.setVoltageGoal(V3_HorseIntakeConstants.SQUISH_VOLTAGE.get());
-                  rightExtension.setVoltageGoal(V3_HorseIntakeConstants.SQUISH_VOLTAGE.get());
-                }),
-            Commands.waitUntil(() -> extensionState != ExtensionState.SQUISH || isNearStow(0.01))
-                .withTimeout(5))
-        .finallyDo(
+    return Command.noRequirements(
+            coroutine -> {
+              if (extensionState == ExtensionState.MANUAL_EXTEND
+                  || extensionState == ExtensionState.STOW) {
+                return;
+              }
+              extensionState = ExtensionState.SQUISH;
+              leftExtension.setVoltageGoal(V3_HorseIntakeConstants.SQUISH_VOLTAGE.get());
+              rightExtension.setVoltageGoal(V3_HorseIntakeConstants.SQUISH_VOLTAGE.get());
+              coroutine.waitUntil(
+                  () -> extensionState != ExtensionState.SQUISH || isNearStow(0.01), Seconds.of(5));
+              if (extensionState == ExtensionState.SQUISH) {
+                leftExtension.setVoltageGoal(Volts.zero());
+                rightExtension.setVoltageGoal(Volts.zero());
+                extensionState = ExtensionState.STOW;
+              }
+            })
+        .whenCanceled(
             () -> {
               if (extensionState == ExtensionState.SQUISH) {
                 leftExtension.setVoltageGoal(Volts.zero());
                 rightExtension.setVoltageGoal(Volts.zero());
                 extensionState = ExtensionState.STOW;
               }
-            });
+            })
+        .named("Intake: Squish Intake");
   }
 
   private boolean isNearStow(double tolerance) {
@@ -417,9 +432,13 @@ public class V3_HorseIntake extends SubsystemBase {
 
   /** Runs a characterization while periodic leaves the extensions' goals alone. */
   private Command characterizing(Command characterization, String name) {
-    return Commands.runOnce(() -> characterizing = true)
-        .andThen(characterization)
-        .finallyDo(() -> characterizing = false)
-        .withName(name);
+    return Command.noRequirements(
+            coroutine -> {
+              characterizing = true;
+              coroutine.await(characterization);
+              characterizing = false;
+            })
+        .whenCanceled(() -> characterizing = false)
+        .named("Intake: " + name);
   }
 }
