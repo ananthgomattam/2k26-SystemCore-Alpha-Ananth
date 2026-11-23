@@ -2,6 +2,7 @@ package first.robot.v3_Horse.commands;
 
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 
+import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDrive;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDriveConstants;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDriveConstants.AutoAlignConstants;
@@ -103,5 +104,12 @@ public final class V3_HorseDriveCommands {
   public static Command aimAtHub(SwerveDrive drive, SwerveDriveConstants driveConstants) {
     return SwerveDriveCommands.rotateToAngle(
         drive, driveConstants, V3_HorseRobotState::getHeading, V3_HorseRobotState::getAimAngle);
+  }
+
+  /** TODO: v3 path following. PathPlanner's AutoBuilder is Commands v2. Does nothing yet. */
+  public static Command followPath(SwerveDrive drive, PathPlannerPath path) {
+    return drive
+        .run(coroutine -> System.out.println("WARNING: path following not ported to v3 yet"))
+        .named("Drive: Follow Path (not ported)");
   }
 }

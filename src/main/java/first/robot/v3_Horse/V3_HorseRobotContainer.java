@@ -2,7 +2,6 @@ package first.robot.v3_Horse;
 
 import static org.wpilib.units.Units.RadiansPerSecond;
 
-import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.team190.gompeilib.io.gyro.interfaces.GyroIO;
 import edu.wpi.team190.gompeilib.io.gyro.phoenix.GyroIOPigeon2;
 import edu.wpi.team190.gompeilib.io.motor.interfaces.MotorIO;
@@ -49,9 +48,8 @@ import java.util.List;
 import java.util.Map;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkChooser;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
-import org.wpilib.command2.button.CommandNiDsXboxController;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.button.CommandNiDsXboxController;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.networktables.NetworkTableInstance;
@@ -268,8 +266,9 @@ public class V3_HorseRobotContainer implements RobotContainer {
 
   private void configureAutos() {
 
-    NamedCommands.registerCommand("INTAKE", V3_HorseCompositeCommands.intakeCollect(intake));
-    NamedCommands.registerCommand("STOP_INTAKE", intake.setRollerState(RollerState.IDLE));
+    // TODO: Named commands for v3
+    // NamedCommands.registerCommand("INTAKE", V3_HorseCompositeCommands.intakeCollect(intake));
+    // NamedCommands.registerCommand("STOP_INTAKE", intake.setRollerState(RollerState.IDLE));
 
     autoChooser.add(
         "Back up and shoot",
@@ -327,7 +326,8 @@ public class V3_HorseRobotContainer implements RobotContainer {
             4,
             5));
 
-    autoChooser.addDefault("Do Nothing", Commands.none());
+    autoChooser.addDefault(
+        "Do Nothing", Command.noRequirements(coroutine -> {}).named("Auto: Do Nothing"));
 
     // Characterizations of the closed-loop mechanisms print each one's plant and gains when they
     // finish
@@ -367,157 +367,128 @@ public class V3_HorseRobotContainer implements RobotContainer {
                     V3_HorseConstants.DRIVE_CONSTANTS,
                     V3_HorseDriveCommands.schoolBusHeading(
                         () -> -driver.getLeftY(), () -> -driver.getLeftX())))
-            .build()
-            .withName("schoolBusDrive"));
+            .named("Drive: Joystick Drive"));
 
-    driver.leftTrigger().onTrue(Commands.runOnce(() -> {}).withName("cardinal-direction-set"));
+    driver.leftTrigger().onTrue(Command.noRequirements(coroutine -> {}).named("No Command"));
 
     driver
         .leftBumper()
-        .whileTrue(
-            V3_HorseCompositeCommands.intakeCollect(intake).withName("driver-leftBumper-true"))
-        .onFalse(intake.setRollerState(RollerState.IDLE).withName("driver-leftBumper-false"));
+        .whileTrue(V3_HorseCompositeCommands.intakeCollect(intake))
+        .onFalse(intake.setRollerState(RollerState.IDLE));
 
     driver
         .rightBumper()
-        .whileTrue(
-            V3_HorseCompositeCommands.scoreOrFeedCommand(rollerFloor, shooter, intake)
-                .withName("driver-rightBumper-true"))
-        .onFalse(stopShooter("driver-rightBumper-false"));
+        .whileTrue(V3_HorseCompositeCommands.scoreOrFeedCommand(rollerFloor, shooter, intake))
+        .onFalse(stopShooter());
 
     driver
         .rightTrigger(0.0)
-        .onTrue(
-            intake
-                .setExtensionState(ExtensionState.MANUAL_EXTEND)
-                .withName("driver-rightTrigger-true"))
-        .onFalse(intake.releaseManualExtend().withName("driver-rightTrigger-false"));
+        .onTrue(intake.setExtensionState(ExtensionState.MANUAL_EXTEND))
+        .onFalse(intake.releaseManualExtend());
 
     driver
         .getHID()
         .povDown()
         .onTrue(
             V3_HorseCompositeCommands.resetHeading(
-                    V3_HorseRobotState::resetPose,
-                    () -> V3_HorseRobotState.getGlobalPose().getTranslation())
-                .withName("driver-dpadDown-true"));
+                V3_HorseRobotState::resetPose,
+                () -> V3_HorseRobotState.getGlobalPose().getTranslation()));
 
     driver
         .y()
         .whileTrue(
             V3_HorseCompositeCommands.fixedShotCommand(
-                    rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.CORNER)
-                .withName("driver-Y-true"))
-        .onFalse(stopShooter("driver-Y-false"));
+                rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.CORNER))
+        .onFalse(stopShooter());
 
     driver
         .a()
         .whileTrue(
             V3_HorseCompositeCommands.fixedShotCommand(
-                    rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.FRONT_TOWER)
-                .withName("driver-A-true"))
-        .onFalse(stopShooter("driver-A-false"));
+                rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.FRONT_TOWER))
+        .onFalse(stopShooter());
 
     driver
         .x()
         .whileTrue(
             V3_HorseCompositeCommands.fixedShotCommand(
-                    rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.SIDE_TOWER)
-                .withName("driver-X-true"))
-        .onFalse(stopShooter("driver-X-false"));
+                rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.SIDE_TOWER))
+        .onFalse(stopShooter());
 
-    driver
-        .start()
-        .onTrue(
-            shooter
-                .setFlywheelVelocity(RadiansPerSecond.of(165))
-                .withName("driver-top-right-true"));
+    driver.start().onTrue(shooter.setFlywheelVelocity(RadiansPerSecond.of(165)));
 
-    driver.b().onTrue(V3_HorseCompositeCommands.intakeStow(intake).withName("driver-B-true"));
+    driver.b().onTrue(V3_HorseCompositeCommands.intakeStow(intake));
 
-    driver
-        .rightStick()
-        .onTrue(V3_HorseDriveCommands.toggleSchoolBus().withName("driver-rightStick-true"));
+    driver.rightStick().onTrue(V3_HorseDriveCommands.toggleSchoolBus());
 
-    operator
-        .leftBumper()
-        .onTrue(V3_HorseCompositeCommands.intakeStow(intake).withName("operator-leftBumper-true"));
+    operator.leftBumper().onTrue(V3_HorseCompositeCommands.intakeStow(intake));
 
     operator
         .rightBumper()
-        .whileTrue(
-            V3_HorseCompositeCommands.intakeCollect(intake).withName("operator-rightBumper-true"))
-        .onFalse(intake.setRollerState(RollerState.IDLE).withName("operator-leftBumper-false"));
+        .whileTrue(V3_HorseCompositeCommands.intakeCollect(intake))
+        .onFalse(intake.setRollerState(RollerState.IDLE));
 
     operator
         .leftTrigger()
-        .whileTrue(intake.intakeRollers().withName("operator-leftTrigger-true"))
-        .onFalse(intake.setRollerState(RollerState.IDLE).withName("operator-leftTrigger-false"));
+        .whileTrue(intake.intakeRollers())
+        .onFalse(intake.setRollerState(RollerState.IDLE));
 
     operator
         .rightTrigger()
-        .whileTrue(intake.extakeRollers().withName("operator-rightTrigger-true"))
-        .onFalse(intake.setRollerState(RollerState.IDLE).withName("operator-leftTrigger-false"));
+        .whileTrue(intake.extakeRollers())
+        .onFalse(intake.setRollerState(RollerState.IDLE));
     operator
         .getHID()
         .povUp()
         .whileTrue(
-            Commands.runOnce(
-                    () ->
+            Command.noRequirements(
+                    corountine ->
                         rollerFloor.setOverrideRollerFloorVoltage(
                             V3_HorseRollerFloorConstants.ROLLER_FLOOR_SLOW_VOLTAGE))
+                .named("RollerFloor: Slow Forward")
                 .andThen(rollerFloor.setState(RollerFloorState.OVERRIDE))
-                .withName("operator-dPadUp-true"))
-        .onFalse(rollerFloor.setState(RollerFloorState.STOP).withName("operator-dPadUp-false"));
+                .withAutomaticName())
+        .onFalse(rollerFloor.setState(RollerFloorState.STOP));
 
     operator
         .getHID()
         .povDown()
         .whileTrue(
-            Commands.runOnce(
-                    () ->
+            Command.noRequirements(
+                    coroutine ->
                         rollerFloor.setOverrideRollerFloorVoltage(
                             V3_HorseRollerFloorConstants.ROLLER_FLOOR_RUN_VOLTAGE.times(-1)))
+                .named("RollerFloor: Reverse")
                 .andThen(rollerFloor.setState(RollerFloorState.OVERRIDE))
-                .withName("operator-dPadDown-true"))
-        .onFalse(rollerFloor.setState(RollerFloorState.STOP).withName("operator-dPadDown-false"));
+                .withAutomaticName())
+        .onFalse(rollerFloor.setState(RollerFloorState.STOP));
 
-    operator.getHID().povLeft().onTrue(shooter.resetHoodZero().withName("operator-dPadLeft-true"));
+    operator.getHID().povLeft().onTrue(shooter.resetHoodZero());
 
-    operator
-        .getHID()
-        .povRight()
-        .onTrue(intake.zeroExtensions().withName("operator-dPadRight-true"));
+    operator.getHID().povRight().onTrue(intake.zeroExtensions());
 
-    operator.b().onTrue(shooter.incrementFlywheelVelocity().withName("operator-B-true"));
-    operator.a().onTrue(shooter.decrementFlywheelVelocity().withName("operator-A-true"));
+    operator.b().onTrue(shooter.incrementFlywheelVelocity());
+    operator.a().onTrue(shooter.decrementFlywheelVelocity());
 
     operator
         .x()
         .whileTrue(
             V3_HorseCompositeCommands.fixedShotCommand(
-                    rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.FEED)
-                .withName("driver-X-true"))
-        .onFalse(stopShooter("driver-X-false"));
+                rollerFloor, shooter, intake, V3_HorseRobotState.FixedShots.FEED))
+        .onFalse(stopShooter());
 
-    // operator.b().onTrue(shooter.incrementHoodAngle().withName("operator-B-true"));
-    // operator.a().onTrue(shooter.decrementHoodAngle().withName("operator-A-true"));
+    // operator.b().onTrue(shooter.incrementHoodAngle());
+    // operator.a().onTrue(shooter.decrementHoodAngle());
 
-    operator.back().onTrue(shooter.setGoal(ShooterGoal.STOW).withName("operator-back-true"));
-    operator.start().onTrue(intake.resetIntakeZeroPosition().withName("operator-start-true"));
+    operator.back().onTrue(shooter.setGoal(ShooterGoal.STOW));
+    operator.start().onTrue(intake.resetIntakeZeroPosition());
 
-    operator
-        .leftStick()
-        .whileTrue(intake.slowMoveIn().withName("operator-leftStick-true"))
-        .onFalse(intake.stopExtensions().withName("operator-leftStick-false"));
-    operator
-        .rightStick()
-        .whileTrue(intake.slowMoveOut().withName("operator-rightStick-true"))
-        .onFalse(intake.stopExtensions().withName("operator-rightStick-false"));
+    operator.leftStick().whileTrue(intake.slowMoveIn()).onFalse(intake.stopExtensions());
+    operator.rightStick().whileTrue(intake.slowMoveOut()).onFalse(intake.stopExtensions());
   }
 
-  private Command stopShooter(String name) {
-    return V3_HorseCompositeCommands.stopShooter(rollerFloor, shooter).withName(name);
+  private Command stopShooter() {
+    return V3_HorseCompositeCommands.stopShooter(rollerFloor, shooter);
   }
 
   @Override
