@@ -7,6 +7,6 @@ public interface RobotContainer {
   public default void robotPeriodic() {}
 
   public default Command getAutonomousCommand() {
-    return Command.noRequirements(corountine -> {}).named("Empty Autonomous Command");
+    return Command.noRequirements(coroutine -> {}).named("Empty Autonomous Command");
   }
 }

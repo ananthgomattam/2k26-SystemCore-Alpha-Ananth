@@ -154,6 +154,7 @@ public final class SwerveDriveCommands {
             coroutine -> {
               limiter.reset(0.0);
               timer.restart();
+              state.measuring = true;
               while (true) {
                 drive.runVelocity(
                     new ChassisVelocities(0.0, 0.0, limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY)));
@@ -161,7 +162,6 @@ public final class SwerveDriveCommands {
                   state.positions = drive.getWheelRadiusCharacterizationPositions();
                   state.lastAngle = drive.getRawGyroRotation();
                   state.gyroDelta = 0.0;
-                  state.measuring = true;
                 } else if (state.measuring) {
                   Rotation2d rotation = drive.getRawGyroRotation();
                   state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
