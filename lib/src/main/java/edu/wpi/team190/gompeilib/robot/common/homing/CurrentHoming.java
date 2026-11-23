@@ -8,8 +8,7 @@ import edu.wpi.team190.gompeilib.robot.common.position.PositionControl;
 import java.util.Objects;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
+import org.wpilib.command3.Command;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
@@ -157,19 +156,17 @@ public final class CurrentHoming<P extends Unit> implements MechanismCore.Contro
    * @return the homing command
    */
   public Command command() {
-    return Commands.sequence(
-            Commands.runOnce(
-                () -> {
-                  phase = Phase.DRIVING;
-                  core.activate(this);
-                }),
-            Commands.waitUntil(this::atHardStop),
-            Commands.runOnce(
-                () -> {
-                  positionControl.setPosition(config.position());
-                  phase = Phase.DONE;
-                }))
-        .finallyDo(() -> phase = Phase.DONE);
+    return Command.noRequirements(
+            coroutine -> {
+              phase = Phase.DRIVING;
+              core.activate(this);
+              coroutine.yield();
+              coroutine.waitUntil(this::atHardStop);
+              positionControl.setPosition(config.position());
+              phase = Phase.DONE;
+            })
+        .whenCanceled(() -> phase = Phase.DONE)
+        .named(core.getTopic() + ": Homing");
   }
 
   @Override

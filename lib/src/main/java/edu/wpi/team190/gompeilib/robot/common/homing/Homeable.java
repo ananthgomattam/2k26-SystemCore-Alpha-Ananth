@@ -1,7 +1,7 @@
 package edu.wpi.team190.gompeilib.robot.common.homing;
 
 import edu.wpi.team190.gompeilib.robot.common.core.GompeiMechanism;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 
 /** A mechanism that finds its position by driving into a hard stop. */
 public interface Homeable extends GompeiMechanism {
