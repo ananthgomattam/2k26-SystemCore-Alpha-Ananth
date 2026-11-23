@@ -20,10 +20,10 @@ import first.robot.v3_Horse.subsystems.shooter.V3_HorseShooterConstants.ShooterG
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
-import org.wpilib.command2.SubsystemBase;
-import org.wpilib.command2.button.Trigger;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Mechanism;
+import org.wpilib.command3.Scheduler;
+import org.wpilib.command3.Trigger;
 import org.wpilib.driverstation.MatchState;
 import org.wpilib.math.util.Units;
 import org.wpilib.units.AngleUnit;
@@ -32,7 +32,7 @@ import org.wpilib.units.VoltageUnit;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 
-public class V3_HorseShooter extends SubsystemBase {
+public class V3_HorseShooter implements Mechanism {
 
   private final GenericFlywheel flywheel;
   private ShooterGoal shooterGoal;
@@ -131,6 +131,8 @@ public class V3_HorseShooter extends SubsystemBase {
                         + Units.degreesToRadians(5)));
 
     this.isHopperRunning = isHopperRunning;
+
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   @Trace
@@ -190,16 +192,22 @@ public class V3_HorseShooter extends SubsystemBase {
   }
 
   public Command setGoal(ShooterGoal shooterGoal) {
-    return this.runOnce(() -> this.shooterGoal = shooterGoal);
+    return this.run(coroutine -> this.shooterGoal = shooterGoal)
+        .named("Shooter: Set Goal To: " + shooterGoal.toString());
   }
 
   public Command setGoal(Supplier<ShooterGoal> goalSupplier) {
-    return this.run(() -> this.shooterGoal = goalSupplier.get());
+    return this.runRepeatedly(() -> this.shooterGoal = goalSupplier.get())
+        .named("Shooter: Follow Goal Supplier");
   }
 
   public Command runFixedShot(FixedShots shot) {
-    return Commands.runOnce(() -> fixedShotParameters = shot.getParameters())
-        .andThen(setGoal(ShooterGoal.FIXED_SHOTS));
+    return this.run(
+            coroutine -> {
+              fixedShotParameters = shot.getParameters();
+              shooterGoal = ShooterGoal.FIXED_SHOTS;
+            })
+        .named("Shooter: Run " + shot.toString() + " Fixed Shot");
   }
 
   public boolean atGoal() {
@@ -210,7 +218,7 @@ public class V3_HorseShooter extends SubsystemBase {
   }
 
   public Command waitUntilAtGoal() {
-    return Commands.waitUntil(this::atGoal);
+    return Command.waitUntil(this::atGoal).named("Shooter: Wait Until At Goal");
   }
 
   public Command waitUntilHoodAtGoal() {
@@ -241,10 +249,14 @@ public class V3_HorseShooter extends SubsystemBase {
    * while periodic leaves the hood and flywheel goals alone.
    */
   private Command characterizing(Command characterization, String name) {
-    return Commands.runOnce(() -> characterizing = true)
-        .andThen(characterization)
-        .finallyDo(() -> characterizing = false)
-        .withName(name);
+    return Command.noRequirements(
+            coroutine -> {
+              characterizing = true;
+              coroutine.await(characterization);
+              characterizing = false;
+            })
+        .whenCanceled(() -> characterizing = false)
+        .named("Shooter: " + name);
   }
 
   private void applyGoal() {
@@ -280,23 +292,32 @@ public class V3_HorseShooter extends SubsystemBase {
   }
 
   public Command incrementFlywheelVelocity() {
-    return Commands.runOnce(flywheel.getVelocityGoal()::increment);
+    return Command.noRequirements(coroutine -> flywheel.getVelocityGoal().increment())
+        .named("Shooter: Increment Flywheel Velocity");
   }
 
   public Command decrementFlywheelVelocity() {
-    return Commands.runOnce(flywheel.getVelocityGoal()::decrement);
+    return Command.noRequirements(coroutine -> flywheel.getVelocityGoal().decrement())
+        .named("Shooter: Decrement Flywheel Velocity");
   }
 
   public Command incrementHoodAngle() {
-    return Commands.runOnce(hood.getPositionGoal()::increment);
+    return Command.noRequirements(coroutine -> hood.getPositionGoal().increment())
+        .named("Shooter: Increment Hood Angle");
   }
 
   public Command decrementHoodAngle() {
-    return Commands.runOnce(hood.getPositionGoal()::decrement);
+    return Command.noRequirements(coroutine -> hood.getPositionGoal().decrement())
+        .named("Shooter: Decrement Hood Angle");
   }
 
   public Command setHoodAngle(Angle angle) {
-    return setGoal(ShooterGoal.IDLE).andThen(Commands.runOnce(() -> hood.setPositionGoal(angle)));
+    return this.run(
+            coroutine -> {
+              shooterGoal = ShooterGoal.IDLE;
+              hood.setPositionGoal(angle);
+            })
+        .named("Shooter: Set Hood Angle To " + angle.toString());
   }
 
   public void setHoodGains(Gains<?, AngleUnit, AngularVelocityUnit> hoodGains) {
@@ -317,10 +338,12 @@ public class V3_HorseShooter extends SubsystemBase {
   }
 
   public Command setFlywheelVelocity(AngularVelocity velocity) {
-    return setGoal(ShooterGoal.IDLE)
-        .andThen(
-            Commands.runOnce(
-                () -> flywheel.setVelocityGoal(velocity, Feedforward.amps(Amps.of(0)))));
+    return this.run(
+            coroutine -> {
+              shooterGoal = ShooterGoal.IDLE;
+              flywheel.setVelocityGoal(velocity, Feedforward.amps(Amps.of(0)));
+            })
+        .named("Shooter: Set Flywheel Velocity To " + velocity.toString());
   }
 
   /**
