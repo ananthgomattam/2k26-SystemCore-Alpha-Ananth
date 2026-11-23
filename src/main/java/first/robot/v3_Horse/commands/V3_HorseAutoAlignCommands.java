@@ -8,16 +8,19 @@ import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDrive;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDriveConstants.AutoAlignConstants;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Coroutine;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.controller.ProfiledPIDController;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
 import org.wpilib.math.trajectory.TrapezoidProfile;
 
-public class V3_HorseAutoAlignCommands extends Command {
+public class V3_HorseAutoAlignCommands implements Command {
   private final SwerveDrive drive;
   private final Pose2d targetPose;
   private final BooleanSupplier valid;
@@ -46,7 +49,6 @@ public class V3_HorseAutoAlignCommands extends Command {
       Supplier<Pose2d> robotPose,
       AutoAlignConstants constants,
       double maxAccelerationMetersPerSecond) {
-    this.addRequirements(drive);
 
     this.drive = drive;
     this.targetPose = targetPose;
@@ -92,8 +94,7 @@ public class V3_HorseAutoAlignCommands extends Command {
     speeds = new ChassisVelocities();
   }
 
-  @Override
-  public void initialize() {
+  private void initialize() {
     Logger.recordOutput("Drive/Auto Align/Goal", targetPose);
 
     ChassisVelocities measuredSpeeds = drive.getMeasuredChassisVelocities();
@@ -102,8 +103,7 @@ public class V3_HorseAutoAlignCommands extends Command {
     alignYController.reset(robotPose.get().getY(), measuredSpeeds.vy);
   }
 
-  @Override
-  public void execute() {
+  private void execute() {
 
     if (valid.getAsBoolean()) {
       ChassisVelocities measuredSpeeds = drive.getMeasuredChassisVelocities();
@@ -129,20 +129,46 @@ public class V3_HorseAutoAlignCommands extends Command {
     drive.runVelocity(speeds);
   }
 
-  @Override
-  public void end(boolean interrupted) {
+  private void end(boolean interrupted) {
     drive.stop();
     alignHeadingController.reset(robotPose.get().getRotation().getRadians());
     alignXController.reset(robotPose.get().getX());
     alignYController.reset(robotPose.get().getY());
   }
 
-  @Override
-  public boolean isFinished() {
+  private boolean isFinished() {
     // Return true when the command should end
     return alignXController.atGoal()
         && alignYController.atGoal()
         && alignHeadingController.atGoal();
+  }
+
+  @Override
+  public String name() {
+    return "AutoAlign: " + targetPose;
+  }
+
+  @Override
+  public Set<Mechanism> requirements() {
+    return Set.of(drive);
+  }
+
+  @Override
+  public void run(Coroutine coroutine) {
+    initialize();
+    while (true) {
+      execute();
+      if (isFinished()) {
+        break;
+      }
+      coroutine.yield();
+    }
+    end(false);
+  }
+
+  @Override
+  public void onCancel() {
+    end(true);
   }
 
   /**

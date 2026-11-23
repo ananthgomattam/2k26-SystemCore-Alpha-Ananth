@@ -14,8 +14,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import lombok.Getter;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
+import org.wpilib.command3.Command;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.util.Units;
@@ -53,7 +52,8 @@ public final class V3_HorseDriveCommands {
   }
 
   public static Command toggleSchoolBus() {
-    return Commands.runOnce(() -> schoolBusEnabled = !schoolBusEnabled).ignoringDisable(true);
+    return Command.noRequirements(coroutine -> schoolBusEnabled = !schoolBusEnabled)
+        .named("Drive: School Bus Toggled");
   }
 
   public static double getSchoolBusDeadband() {
@@ -61,11 +61,13 @@ public final class V3_HorseDriveCommands {
   }
 
   public static Command incrementSlowFactor() {
-    return Commands.runOnce(() -> slowFactor = Math.min(slowFactor + 0.05, 1.0));
+    return Command.noRequirements(coroutine -> slowFactor = Math.min(slowFactor + 0.05, 1.0))
+        .named("Drive: Increment Slow Factor");
   }
 
   public static Command decrementSlowFactor() {
-    return Commands.runOnce(() -> slowFactor = Math.max(slowFactor - 0.05, 0.0));
+    return Command.noRequirements(coroutine -> slowFactor = Math.max(slowFactor - 0.05, 0.0))
+        .named("Drive: Decrement Slow Factor");
   }
 
   public static boolean atAngle(Rotation2d currentRotation, Rotation2d targetRotation) {
