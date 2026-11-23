@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
 
-public class MechanismTest extends GompeiLibTestBase {
+public class GompeiMechanismTest extends GompeiLibTestBase {
   private MockedStatic<Logger> logger;
   private TestMotors motors;
   private TestMechanism mechanism;

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.AngularVelocityUnit;
 
 public class VelocityControllableTest extends GompeiLibTestBase {
@@ -66,8 +66,8 @@ public class VelocityControllableTest extends GompeiLibTestBase {
     assertTrue(mechanism.atVelocityGoal());
     assertFalse(mechanism.atVelocityGoal(RadiansPerSecond.of(40)));
     Command wait = mechanism.waitUntilAtVelocityGoal();
-    wait.initialize();
-    assertFalse(wait.isFinished());
+    start(wait);
+    assertTrue(isRunning(wait));
   }
 
   @Test

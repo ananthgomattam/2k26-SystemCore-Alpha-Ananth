@@ -24,8 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.units.DistanceUnit;
 
@@ -37,7 +37,7 @@ public class HomingExtensionTest extends GompeiLibTestBase {
   private MockedStatic<Logger> logger;
   private MotorIO motor;
   private MotorIOFactory factory;
-  private Subsystem subsystem;
+  private Mechanism subsystem;
   private Consumer<MotorTelemetry> reading = t -> {};
 
   @BeforeEach
@@ -54,7 +54,7 @@ public class HomingExtensionTest extends GompeiLibTestBase {
     factory = mock(MotorIOFactory.class);
     when(factory.family()).thenReturn("Mock");
     when(factory.create(any())).thenReturn(motor);
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("Test");
   }
 
@@ -104,19 +104,19 @@ public class HomingExtensionTest extends GompeiLibTestBase {
     assertSame(HOMING, extension.homing().getConfig());
 
     Command home = extension.home();
-    home.initialize();
+    start(home);
     extension.periodic();
-    home.execute();
+    runScheduler();
     assertEquals("Homing", extension.getMode());
     verify(motor)
         .setControl(new OpenLoopRequest.VoltageOutput(Volts.of(-1.0), true, CurrentHoming.OPTIONS));
 
     reading = t -> t.torqueCurrent = Amps.of(-20.0);
     extension.periodic();
-    for (int i = 0; i < 5 && !home.isFinished(); i++) {
-      home.execute();
+    for (int i = 0; i < 5 && isRunning(home); i++) {
+      runScheduler();
     }
-    assertTrue(home.isFinished());
+    assertFalse(isRunning(home));
     verify(motor).setPosition(Radians.of(0.0));
   }
 

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.AngleUnit;
 
 public class DifferentialControllableTest extends GompeiLibTestBase {
@@ -102,7 +102,7 @@ public class DifferentialControllableTest extends GompeiLibTestBase {
     assertFalse(mechanism.atDifferentialGoals());
 
     Command wait = mechanism.waitUntilAtDifferentialGoals();
-    wait.initialize();
-    assertFalse(wait.isFinished());
+    start(wait);
+    assertTrue(isRunning(wait));
   }
 }

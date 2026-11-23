@@ -33,7 +33,7 @@ import edu.wpi.team190.gompeilib.robot.common.position.PositionControllable;
 import edu.wpi.team190.gompeilib.robot.common.velocity.VelocityControl;
 import edu.wpi.team190.gompeilib.robot.common.velocity.VelocityControllable;
 import java.util.function.Consumer;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularAccelerationUnit;
 import org.wpilib.units.AngularVelocityUnit;
@@ -51,7 +51,7 @@ public final class MechanismTestSupport {
   public static final class TestMotors {
     public final MotorIO motor = mock(MotorIO.class);
     public final MotorControllerGroup group;
-    public final Subsystem subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    public final Mechanism subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     private Consumer<MotorTelemetry> reading = t -> {};
 
     public TestMotors() {

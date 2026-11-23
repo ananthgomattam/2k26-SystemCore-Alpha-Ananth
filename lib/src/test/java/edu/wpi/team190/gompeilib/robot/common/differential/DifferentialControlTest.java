@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.measure.Angle;
 
@@ -130,8 +130,8 @@ public class DifferentialControlTest extends GompeiLibTestBase {
     assertTrue(control.atGoals());
 
     Command wait = control.waitUntilAtGoals();
-    wait.initialize();
-    assertTrue(wait.isFinished());
+    start(wait);
+    assertFalse(isRunning(wait));
   }
 
   @Test

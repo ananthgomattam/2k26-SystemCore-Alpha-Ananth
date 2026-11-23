@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
 import org.wpilib.simulation.SimHooks;
@@ -61,8 +61,8 @@ public class SwerveDriveCommandsTest extends GompeiLibTestBase {
                 constants,
                 new DriveSticks(() -> 0.05, () -> 0.0, () -> 0.0),
                 () -> Rotation2d.ZERO)
-            .build();
-    command.execute();
+            .named("Joystick Drive");
+    start(command);
     verify(drive).runVelocity(new ChassisVelocities(0.0, 0.0, 0.0));
   }
 
@@ -71,10 +71,9 @@ public class SwerveDriveCommandsTest extends GompeiLibTestBase {
     Command command =
         SwerveDriveCommands.rotateToAngle(
             drive, constants, () -> Rotation2d.ZERO, () -> Rotation2d.fromDegrees(90.0));
-    assertTrue(command.getRequirements().contains(drive));
+    assertTrue(command.requirements().contains(drive));
 
-    command.initialize();
-    command.execute();
+    start(command);
     ArgumentCaptor<ChassisVelocities> captor = ArgumentCaptor.forClass(ChassisVelocities.class);
     verify(drive).runVelocity(captor.capture());
     assertEquals(0.0, captor.getValue().vx, TOLERANCE);
@@ -85,14 +84,15 @@ public class SwerveDriveCommandsTest extends GompeiLibTestBase {
   @Test
   public void testStopHoldsTheModulesInAnX() {
     Command command = SwerveDriveCommands.stop(drive);
-    assertTrue(command.getRequirements().contains(drive));
-    command.execute();
+    assertTrue(command.requirements().contains(drive));
+    start(command);
     verify(drive).stopWithX();
-    assertFalse(command.isFinished());
+    assertTrue(isRunning(command));
   }
 
   @Test
   public void testFeedforwardCharacterizationRunsTheRoutineOnTheDrive() {
+    when(drive.getName()).thenReturn("SwerveDrive");
     Command command =
         SwerveDriveCommands.feedforwardCharacterization(
             drive,
@@ -102,8 +102,8 @@ public class SwerveDriveCommandsTest extends GompeiLibTestBase {
                 .withQuasistaticTimeout(Seconds.of(2))
                 .withDynamicTimeout(Seconds.of(1))
                 .build());
-    assertEquals("Characterization", command.getName());
-    assertTrue(command.getRequirements().contains(drive));
+    assertEquals("SwerveDrive: Characterization", command.name());
+    assertTrue(command.requirements().contains(drive));
 
     assertThrows(
         IllegalArgumentException.class,
@@ -152,13 +152,13 @@ public class SwerveDriveCommandsTest extends GompeiLibTestBase {
         .thenReturn(Rotation2d.ZERO, Rotation2d.fromRadians(0.5), Rotation2d.fromRadians(1.0));
 
     Command command = SwerveDriveCommands.wheelRadiusCharacterization(drive, constants);
-    assertTrue(command.getRequirements().contains(drive));
+    assertTrue(command.requirements().contains(drive));
 
     SimHooks.pauseTiming();
-    command.initialize();
+    start(command);
     // Spin until the modules have oriented and measurement has started
     for (int i = 0; i < 60; i++) {
-      command.execute();
+      runScheduler();
       SimHooks.stepTiming(LOOP_SECONDS);
     }
     ArgumentCaptor<ChassisVelocities> captor = ArgumentCaptor.forClass(ChassisVelocities.class);
@@ -171,7 +171,7 @@ public class SwerveDriveCommandsTest extends GompeiLibTestBase {
     ByteArrayOutputStream printed = new ByteArrayOutputStream();
     System.setOut(new PrintStream(printed));
     try {
-      command.end(true);
+      scheduler.cancel(command);
     } finally {
       System.setOut(original);
     }

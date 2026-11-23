@@ -41,7 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.simulation.DriverStationSim;
 import org.wpilib.simulation.SimHooks;
@@ -118,11 +118,11 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     return new OpenLoopRequest.VoltageOutput(Volts.of(volts), true, RequestOptions.DEFAULT);
   }
 
-  /** Steps time, then runs one loop of the command, as the scheduler would. */
-  private static boolean loop(Command command, double seconds) {
+  /** Steps time, then runs one scheduler loop. */
+  private boolean loop(Command command, double seconds) {
     SimHooks.stepTiming(seconds);
-    command.execute();
-    return command.isFinished();
+    runScheduler();
+    return !isRunning(command);
   }
 
   /** A target that reports samples from a known plant, one per call. */
@@ -185,7 +185,7 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     CharacterizationRoutine<VoltageUnit> routine = routine(config().build(), Optional.empty());
 
     Command forward = routine.leg(Leg.QUASISTATIC_FORWARD);
-    forward.initialize();
+    start(forward);
     assertFalse(loop(forward, 0.5));
     verify(motors.motor).setControl(volts(1.0));
     assertFalse(loop(forward, 0.5));
@@ -193,7 +193,7 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     logger.verify(() -> Logger.recordOutput(STATE, "quasistatic-forward"), times(2));
 
     Command reverse = routine.leg(Leg.QUASISTATIC_REVERSE);
-    reverse.initialize();
+    start(reverse);
     assertFalse(loop(reverse, 0.25));
     verify(motors.motor).setControl(volts(-0.5));
     logger.verify(() -> Logger.recordOutput(STATE, "quasistatic-reverse"));
@@ -204,13 +204,13 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     CharacterizationRoutine<VoltageUnit> routine = routine(config().build(), Optional.empty());
 
     Command forward = routine.leg(Leg.DYNAMIC_FORWARD);
-    forward.initialize();
+    start(forward);
     assertFalse(loop(forward, 0.02));
     verify(motors.motor).setControl(volts(6.0));
     logger.verify(() -> Logger.recordOutput(STATE, "dynamic-forward"));
 
     Command reverse = routine.leg(Leg.DYNAMIC_REVERSE);
-    reverse.initialize();
+    start(reverse);
     assertFalse(loop(reverse, 0.02));
     verify(motors.motor).setControl(volts(-6.0));
     logger.verify(() -> Logger.recordOutput(STATE, "dynamic-reverse"));
@@ -220,16 +220,15 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
   public void testUnconstrainedLegsRunToTheirTimeout() {
     CharacterizationRoutine<VoltageUnit> routine = routine(config().build(), Optional.empty());
     Command leg = routine.leg(Leg.QUASISTATIC_FORWARD);
-    leg.initialize();
+    start(leg);
     assertFalse(loop(leg, 3.9));
     assertTrue(loop(leg, 0.1));
-    leg.end(false);
     verify(motors.motor).setControl(volts(0));
     logger.verify(() -> Logger.recordOutput(STATE, "none"));
     logger.verify(() -> Logger.recordOutput(END_REASON, "TIMEOUT"));
 
     Command dynamic = routine.leg(Leg.DYNAMIC_FORWARD);
-    dynamic.initialize();
+    start(dynamic);
     assertFalse(loop(dynamic, 0.9));
     assertTrue(loop(dynamic, 0.1));
   }
@@ -242,19 +241,20 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     // Starting next to the lower limit doesn't stop a forward leg.
     position.set(Meters.of(0.05));
     Command forward = routine.leg(Leg.DYNAMIC_FORWARD);
-    forward.initialize();
+    start(forward);
     assertFalse(loop(forward, 0.02));
     position.set(Meters.of(0.95));
-    assertTrue(forward.isFinished());
-    forward.end(false);
+    runScheduler();
+    assertFalse(isRunning(forward));
     verify(motors.motor).setControl(volts(0));
     logger.verify(() -> Logger.recordOutput(END_REASON, "LIMIT"));
 
     Command reverse = routine.leg(Leg.DYNAMIC_REVERSE);
-    reverse.initialize();
+    start(reverse);
     assertFalse(loop(reverse, 0.02));
     position.set(Meters.of(0.08));
-    assertTrue(reverse.isFinished());
+    runScheduler();
+    assertFalse(isRunning(reverse));
   }
 
   @Test
@@ -274,7 +274,7 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
                 target(other, VOLTS, Optional.of(otherConstraint))));
 
     Command leg = routine.leg(Leg.QUASISTATIC_FORWARD);
-    leg.initialize();
+    start(leg);
     assertFalse(loop(leg, 0.5));
     verify(motors.motor).setControl(volts(1.0));
     verify(otherMotors.motor).setControl(volts(1.0));
@@ -282,8 +282,8 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     assertEquals(1, routine.samples(1).size());
 
     otherPosition.set(Meters.of(0.95));
-    assertTrue(leg.isFinished());
-    leg.end(false);
+    runScheduler();
+    assertFalse(isRunning(leg));
     verify(motors.motor).setControl(volts(0));
     verify(otherMotors.motor).setControl(volts(0));
     logger.verify(() -> Logger.recordOutput(END_REASON, "LIMIT"));
@@ -296,12 +296,11 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     CharacterizationRoutine<VoltageUnit> routine =
         routine(config().build(), Optional.of(constraint));
     Command leg = routine.leg(Leg.DYNAMIC_FORWARD);
-    leg.initialize();
-    assertTrue(leg.isFinished());
-    leg.execute();
+    start(leg);
+    runScheduler();
+    assertFalse(isRunning(leg));
     verify(motors.motor, never()).setControl(volts(6.0));
     assertTrue(routine.samples(0).isEmpty());
-    leg.end(false);
     verify(motors.motor).setControl(volts(0));
     logger.verify(() -> Logger.recordOutput(END_REASON, "SKIPPED"));
     logger.verify(() -> Logger.recordOutput(STATE, "dynamic-forward"), never());
@@ -311,9 +310,9 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
   public void testCancellingZeroesTheOutput() {
     CharacterizationRoutine<VoltageUnit> routine = routine(config().build(), Optional.empty());
     Command leg = routine.leg(Leg.DYNAMIC_REVERSE);
-    leg.initialize();
+    start(leg);
     assertFalse(loop(leg, 0.02));
-    leg.end(true);
+    scheduler.cancel(leg);
     verify(motors.motor).setControl(volts(0));
     logger.verify(() -> Logger.recordOutput(END_REASON, "CANCELLED"));
   }
@@ -338,15 +337,16 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
                     Optional.empty())));
 
     Command quasistatic = routine.leg(Leg.QUASISTATIC_REVERSE);
-    quasistatic.initialize();
+    start(quasistatic);
     loop(quasistatic, 0.5);
     verify(motors.motor).setControl(new OpenLoopRequest.CurrentOutput(Amps.of(-2)));
 
     Command dynamic = routine.leg(Leg.DYNAMIC_FORWARD);
-    dynamic.initialize();
+    start(dynamic);
     loop(dynamic, 0.02);
     verify(motors.motor).setControl(new OpenLoopRequest.CurrentOutput(Amps.of(30)));
-    dynamic.end(true);
+    clearInvocations(motors.motor);
+    scheduler.cancel(dynamic);
     verify(motors.motor).setControl(new OpenLoopRequest.CurrentOutput(Amps.of(0)));
   }
 
@@ -356,22 +356,22 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     CharacterizationRoutine<VoltageUnit> routine = routine(config, Optional.empty());
 
     Command first = routine.leg(Leg.DYNAMIC_FORWARD);
-    first.initialize();
+    start(first);
     config.stepOutput().set(Volts.of(3));
     config.dynamicTimeout().set(Seconds.of(0.2));
     loop(first, 0.5);
     verify(motors.motor).setControl(volts(6.0));
-    assertFalse(first.isFinished());
+    assertTrue(isRunning(first));
 
     Command second = routine.leg(Leg.DYNAMIC_FORWARD);
-    second.initialize();
+    start(second);
     assertFalse(loop(second, 0.1));
     verify(motors.motor).setControl(volts(3.0));
     assertTrue(loop(second, 0.1));
 
     config.rampRate().set(VoltsPerSecond.ofNative(8));
     Command ramp = routine.leg(Leg.QUASISTATIC_FORWARD);
-    ramp.initialize();
+    start(ramp);
     loop(ramp, 0.5);
     verify(motors.motor).setControl(volts(4.0));
   }
@@ -389,9 +389,9 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     CharacterizationRoutine<VoltageUnit> routine = routine(config, Optional.empty());
 
     Command command = routine.command();
-    assertEquals("Characterization", command.getName());
-    assertTrue(command.getRequirements().contains(motors.subsystem));
-    command.initialize();
+    assertEquals("Test: Characterization", command.name());
+    assertTrue(command.requirements().contains(motors.subsystem));
+    start(command);
     assertEquals(MechanismCore.IDLE, core.getMode());
 
     // The idle step finishes, then quasistatic forward runs until it times out.
@@ -412,7 +412,6 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
       finished = loop(command, 0.02);
     }
     assertTrue(finished);
-    command.end(false);
     logger.verify(() -> Logger.recordOutput(STATE, "dynamic-forward"), atLeastOnce());
     logger.verify(() -> Logger.recordOutput(END_REASON, "TIMEOUT"), times(2));
     logger.verify(() -> Logger.recordOutput(STATE, "quasistatic-reverse"), never());
@@ -425,8 +424,8 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
   public void testLegNamesAndRequirements() {
     CharacterizationRoutine<VoltageUnit> routine = routine(config().build(), Optional.empty());
     Command leg = routine.leg(Leg.QUASISTATIC_REVERSE);
-    assertEquals("characterize-quasistatic-reverse-Test", leg.getName());
-    assertEquals(Set.of(motors.subsystem), leg.getRequirements());
+    assertEquals("characterize-quasistatic-reverse-Test", leg.name());
+    assertEquals(Set.of(motors.subsystem), leg.requirements());
   }
 
   @Test
@@ -515,9 +514,9 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     CharacterizationRoutine<VoltageUnit> routine =
         new CharacterizationRoutine<>(config().build(), motors.subsystem, List.of(target));
     Command leg = routine.leg(Leg.DYNAMIC_FORWARD);
-    leg.initialize();
+    start(leg);
     for (int i = 0; i < 40; i++) {
-      leg.execute();
+      runScheduler();
     }
 
     Result result = routine.fit(0);
@@ -612,16 +611,15 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
     Command command = routine.command();
-    command.initialize();
+    start(command);
     boolean finished = false;
     for (int i = 0; i < 2000 && !finished; i++) {
       SimHooks.stepTiming(0.02);
       core.periodic();
-      command.execute();
-      finished = command.isFinished();
+      runScheduler();
+      finished = !isRunning(command);
     }
     assertTrue(finished);
-    command.end(false);
     return routine.fit(0);
   }
 
@@ -697,12 +695,12 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
             motors.subsystem,
             List.of(target));
     Command leg = routine.leg(Leg.DYNAMIC_FORWARD);
-    leg.initialize();
-    leg.execute();
+    start(leg);
+    runScheduler();
     assertEquals(1, routine.samples(0).size());
 
     Command command = routine.command();
-    command.initialize();
+    start(command);
     assertTrue(routine.samples(0).isEmpty());
     List<Sample> copy = new ArrayList<>(routine.samples(0));
     assertTrue(copy.isEmpty());

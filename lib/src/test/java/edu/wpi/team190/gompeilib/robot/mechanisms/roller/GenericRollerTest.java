@@ -25,14 +25,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.units.VoltageUnit;
 
 public class GenericRollerTest extends GompeiLibTestBase {
   private final List<MotorIO> motors = new ArrayList<>();
   private MotorIOFactory factory;
-  private Subsystem subsystem;
+  private Mechanism subsystem;
   private GenericRollerConstants constants;
 
   @BeforeEach
@@ -47,7 +47,7 @@ public class GenericRollerTest extends GompeiLibTestBase {
               motors.add(motor);
               return motor;
             });
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("TestRollerSubsystem");
 
     constants =

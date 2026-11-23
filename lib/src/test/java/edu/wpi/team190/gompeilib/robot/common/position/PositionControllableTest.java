@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.AngleUnit;
 
 public class PositionControllableTest extends GompeiLibTestBase {
@@ -52,8 +52,8 @@ public class PositionControllableTest extends GompeiLibTestBase {
     assertTrue(mechanism.atPositionGoal());
     assertFalse(mechanism.atPositionGoal(Radians.of(2)));
     Command wait = mechanism.waitUntilAtPositionGoal();
-    wait.initialize();
-    assertFalse(wait.isFinished());
+    start(wait);
+    assertTrue(isRunning(wait));
 
     mechanism.setPosition(Radians.of(0.25));
     verify(motors.motor).setPosition(Radians.of(0.25));

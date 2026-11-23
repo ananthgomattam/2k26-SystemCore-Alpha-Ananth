@@ -9,7 +9,7 @@ import edu.wpi.team190.gompeilib.io.motor.outputs.OpenLoopRequest;
 import edu.wpi.team190.gompeilib.robot.common.core.MechanismTestSupport.TestMechanism;
 import edu.wpi.team190.gompeilib.robot.common.core.MechanismTestSupport.TestMotors;
 import org.junit.jupiter.api.Test;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 
 public class HomeableTest extends GompeiLibTestBase {
   @Test
@@ -18,12 +18,12 @@ public class HomeableTest extends GompeiLibTestBase {
     TestMechanism mechanism = new TestMechanism(motors);
 
     Command home = mechanism.home();
-    home.initialize();
+    start(home);
     mechanism.periodic();
-    home.execute();
-    home.execute();
+    runScheduler();
+    runScheduler();
     verify(motors.motor, atLeastOnce())
         .setControl(new OpenLoopRequest.VoltageOutput(Volts.of(-1), true, CurrentHoming.OPTIONS));
-    assertFalse(home.isFinished());
+    assertTrue(isRunning(home));
   }
 }

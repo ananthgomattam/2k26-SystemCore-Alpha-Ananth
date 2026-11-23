@@ -20,7 +20,7 @@ import edu.wpi.team190.gompeilib.robot.mechanisms.arm.ArmConstants;
 import edu.wpi.team190.gompeilib.robot.mechanisms.arm.HomingArm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.VoltageUnit;
@@ -36,14 +36,14 @@ public class GenericHoodTest extends GompeiLibTestBase {
   }
 
   private MotorIOFactory factory;
-  private Subsystem subsystem;
+  private Mechanism subsystem;
 
   @BeforeEach
   public void setUp() {
     factory = mock(MotorIOFactory.class);
     when(factory.family()).thenReturn("Mock");
     when(factory.create(any())).thenReturn(mock(MotorIO.class));
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("Shooter");
   }
 

@@ -512,6 +512,7 @@ public final class CharacterizationRoutine<U extends Unit> {
     @Override
     public void run(Coroutine coroutine) {
       initialize();
+      coroutine.yield();
       while (true) {
         execute();
         if (isFinished()) {

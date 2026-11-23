@@ -39,8 +39,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.units.DistanceUnit;
 import org.wpilib.units.LinearVelocityUnit;
@@ -54,7 +54,7 @@ public class ExtensionTest extends GompeiLibTestBase {
   private MotorIOFactory factory;
   private MotorConfig builtConfig;
   private Consumer<MotorTelemetry> reading = t -> {};
-  private Subsystem subsystem;
+  private Mechanism subsystem;
   private ExtensionConstants constants;
   private Gains<VoltageUnit, DistanceUnit, LinearVelocityUnit> slot0;
   private Gains<VoltageUnit, DistanceUnit, LinearVelocityUnit> slot1;
@@ -78,7 +78,7 @@ public class ExtensionTest extends GompeiLibTestBase {
               builtConfig = invocation.getArgument(0);
               return motor;
             });
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("TestExtensionSubsystem");
 
     slot0 =
@@ -306,12 +306,12 @@ public class ExtensionTest extends GompeiLibTestBase {
     readAt(0.5, 0.0);
     extension.periodic();
     Command sysId = extension.characterize();
-    sysId.initialize();
-    sysId.execute();
-    sysId.execute();
+    start(sysId);
+    runScheduler();
+    runScheduler();
     assertEquals(MechanismCore.IDLE, extension.getMode());
     verify(motor, atLeastOnce()).setControl(isA(OpenLoopRequest.VoltageOutput.class));
-    sysId.end(true);
+    scheduler.cancel(sysId);
     verify(motor, atLeastOnce())
         .setControl(new OpenLoopRequest.VoltageOutput(Volts.of(0), true, RequestOptions.DEFAULT));
   }

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularAccelerationUnit;
 import org.wpilib.units.AngularVelocityUnit;
@@ -31,7 +31,7 @@ public class PositionalMechanismTest extends GompeiLibTestBase {
           AngleUnit, AngularVelocityUnit, AngularAccelerationUnit, AngularPositionConstraints> {
     Pivot(
         MotorIOFactory factory,
-        Subsystem subsystem,
+        Mechanism subsystem,
         AngularPositionConstraints constraints,
         Optional<Travel<AngleUnit>> travel) {
       super(
@@ -70,7 +70,7 @@ public class PositionalMechanismTest extends GompeiLibTestBase {
 
   private MockedStatic<Logger> logger;
   private MotorIOFactory factory;
-  private Subsystem subsystem;
+  private Mechanism subsystem;
   private AngularPositionConstraints constraints;
 
   @BeforeEach
@@ -79,7 +79,7 @@ public class PositionalMechanismTest extends GompeiLibTestBase {
     factory = mock(MotorIOFactory.class);
     when(factory.family()).thenReturn("Mock");
     when(factory.create(any())).thenReturn(mock(MotorIO.class));
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("Test");
     constraints =
         AngularPositionConstraints.builder()

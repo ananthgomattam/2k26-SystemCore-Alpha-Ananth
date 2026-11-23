@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.DistanceUnit;
 import org.wpilib.units.VoltageUnit;
@@ -60,10 +60,10 @@ public class CurrentHomingTest extends GompeiLibTestBase {
     return new CurrentHoming<>(core, position, voltage, current, config);
   }
 
-  /** Runs one robot loop: the mechanism's periodic, then the command. */
-  private void loop(Command command) {
+  /** Runs one robot loop: the mechanism's periodic, then the scheduler. */
+  private void loop() {
     core.periodic();
-    command.execute();
+    runScheduler();
   }
 
   @Test
@@ -74,24 +74,23 @@ public class CurrentHomingTest extends GompeiLibTestBase {
     position.setGoal(Meters.of(0.3));
 
     Command home = homing.command();
-    home.initialize();
-    loop(home);
-    loop(home);
+    start(home);
+    loop();
+    loop();
     assertTrue(core.isActive(homing));
     assertEquals("Homing", core.getMode());
     assertEquals(CurrentHoming.Phase.DRIVING, homing.getPhase());
     verify(motors.motor, atLeastOnce())
         .setControl(new OpenLoopRequest.VoltageOutput(Volts.of(-1.0), true, CurrentHoming.OPTIONS));
     assertTrue(CurrentHoming.OPTIONS.ignoreSoftwareLimits());
-    assertFalse(home.isFinished());
+    assertTrue(isRunning(home));
 
     motors.read(t -> t.torqueCurrent = Amps.of(-20.5));
     assertTrue(homing.atHardStop());
-    for (int i = 0; i < 5 && !home.isFinished(); i++) {
-      loop(home);
+    for (int i = 0; i < 5 && isRunning(home); i++) {
+      loop();
     }
-    assertTrue(home.isFinished());
-    home.end(false);
+    assertFalse(isRunning(home));
     verify(motors.motor).setPosition(Radians.of(0.2));
 
     core.periodic();
@@ -111,20 +110,19 @@ public class CurrentHomingTest extends GompeiLibTestBase {
                 Meters.of(0.1)));
 
     Command home = homing.command();
-    home.initialize();
-    loop(home);
-    loop(home);
+    start(home);
+    loop();
+    loop();
     verify(motors.motor, atLeastOnce())
         .setControl(
             new OpenLoopRequest.CurrentOutput(
                 Amps.of(-8.0), 1.0, Amps.zero(), CurrentHoming.OPTIONS));
 
     motors.read(t -> t.torqueCurrent = Amps.of(-20.5));
-    for (int i = 0; i < 5 && !home.isFinished(); i++) {
-      loop(home);
+    for (int i = 0; i < 5 && isRunning(home); i++) {
+      loop();
     }
-    assertTrue(home.isFinished());
-    home.end(false);
+    assertFalse(isRunning(home));
     core.periodic();
     verify(motors.motor, atLeastOnce())
         .setControl(
@@ -136,11 +134,11 @@ public class CurrentHomingTest extends GompeiLibTestBase {
   public void testInterruptStopsDrivingAndKeepsThePosition() {
     CurrentHoming<DistanceUnit> homing = homing(config);
     Command home = homing.command();
-    home.initialize();
-    loop(home);
+    start(home);
+    loop();
     assertEquals("Homing", core.getMode());
 
-    home.end(true);
+    scheduler.cancel(home);
     assertEquals(CurrentHoming.Phase.DONE, homing.getPhase());
     assertEquals("Homed", core.getMode());
     core.periodic();
@@ -153,8 +151,8 @@ public class CurrentHomingTest extends GompeiLibTestBase {
   public void testAnotherGoalTakesOver() {
     CurrentHoming<DistanceUnit> homing = homing(config);
     Command home = homing.command();
-    home.initialize();
-    loop(home);
+    start(home);
+    loop();
 
     position.setGoal(Meters.of(0.3));
     assertTrue(core.isActive(position));

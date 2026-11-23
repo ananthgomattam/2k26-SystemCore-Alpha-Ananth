@@ -39,8 +39,8 @@ import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.units.AngularVelocityUnit;
 import org.wpilib.units.CurrentUnit;
@@ -51,7 +51,7 @@ public class GenericFlywheelTest extends GompeiLibTestBase {
   private MotorIOFactory factory;
   private MotorConfig builtConfig;
   private Consumer<MotorTelemetry> reading = t -> {};
-  private Subsystem subsystem;
+  private Mechanism subsystem;
   private GenericFlywheelConstants constants;
   private Gains<VoltageUnit, AngularVelocityUnit, AngularVelocityUnit> voltageGains;
   private Gains<CurrentUnit, AngularVelocityUnit, AngularVelocityUnit> torqueGains;
@@ -79,7 +79,7 @@ public class GenericFlywheelTest extends GompeiLibTestBase {
               motors.add(motor);
               return motor;
             });
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("TestFlywheelSubsystem");
 
     voltageGains = Gains.angularVelocity(Volts).withPrefix("flywheel/voltage").build();
@@ -274,8 +274,8 @@ public class GenericFlywheelTest extends GompeiLibTestBase {
 
       // Waits a loop for periodic to apply the goal before checking it
       Command wait = flywheel.waitUntilAtVelocityGoal();
-      wait.initialize();
-      assertFalse(wait.isFinished());
+      start(wait);
+      assertTrue(isRunning(wait));
     }
   }
 
@@ -376,19 +376,19 @@ public class GenericFlywheelTest extends GompeiLibTestBase {
       assertTrue(flywheel.characterizationConstraint().isEmpty());
 
       Command voltage = flywheel.characterizeVoltage();
-      voltage.initialize();
-      voltage.execute();
-      voltage.execute();
+      start(voltage);
+      runScheduler();
+      runScheduler();
       assertEquals(MechanismCore.IDLE, flywheel.getMode());
       verify(leader, atLeastOnce()).setControl(isA(OpenLoopRequest.VoltageOutput.class));
-      voltage.end(true);
+      scheduler.cancel(voltage);
 
       Command torque = flywheel.characterizeTorque();
-      torque.initialize();
-      torque.execute();
-      torque.execute();
+      start(torque);
+      runScheduler();
+      runScheduler();
       verify(leader, atLeastOnce()).setControl(isA(OpenLoopRequest.CurrentOutput.class));
-      torque.end(true);
+      scheduler.cancel(torque);
     }
   }
 }

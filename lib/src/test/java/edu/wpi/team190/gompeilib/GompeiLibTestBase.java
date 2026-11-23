@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Scheduler;
 import org.wpilib.hardware.hal.HAL;
 
 /**
@@ -15,6 +17,7 @@ import org.wpilib.hardware.hal.HAL;
  */
 public abstract class GompeiLibTestBase {
   private final List<AutoCloseable> autoCloseables = new ArrayList<>();
+  protected Scheduler scheduler;
 
   @BeforeEach
   public void setUpGompeiLib() {
@@ -24,6 +27,7 @@ public abstract class GompeiLibTestBase {
     } catch (Exception ignored) {
     }
     GompeiLib.init(RobotMode.SIM, isTuningMode(), loopPeriodSecs());
+    scheduler = Scheduler.createIndependentScheduler();
   }
 
   @AfterEach
@@ -62,6 +66,19 @@ public abstract class GompeiLibTestBase {
    *
    * @return true if tuning mode is enabled, false otherwise (default: false)
    */
+  protected void start(Command command) {
+    scheduler.schedule(command);
+    scheduler.run();
+  }
+
+  protected void runScheduler() {
+    scheduler.run();
+  }
+
+  protected boolean isRunning(Command command) {
+    return scheduler.isRunning(command);
+  }
+
   protected boolean isTuningMode() {
     return false;
   }

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.wpilib.units.Units.*;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.util.DriveFeedforwards;
@@ -40,7 +39,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Subsystem;
 import org.wpilib.driverstation.Alliance;
 import org.wpilib.driverstation.RobotState;
 import org.wpilib.driverstation.internal.DriverStationBackend;
@@ -226,8 +224,7 @@ public class SwerveDriveTest extends GompeiLibTestBase {
 
   @Test
   public void testSwerveDriveLowFrequencyGyro() throws Exception {
-    try (MockedStatic<AutoBuilder> mockAutoBuilder = mockStatic(AutoBuilder.class);
-        MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
+    try (MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
         MockedStatic<Logger> _ = mockStatic(Logger.class);
         MockedStatic<RobotState> mockRobotState = mockStatic(RobotState.class);
         MockedStatic<DriverStationBackend> mockDSBackend = mockStatic(DriverStationBackend.class)) {
@@ -235,42 +232,6 @@ public class SwerveDriveTest extends GompeiLibTestBase {
       mockRobotConfig.when(RobotConfig::fromGUISettings).thenReturn(mock(RobotConfig.class));
       mockRobotState.when(RobotState::isDisabled).thenReturn(false);
       mockDSBackend.when(DriverStationBackend::getAlliance).thenReturn(Optional.of(Alliance.RED));
-
-      // Capture the callbacks handed to AutoBuilder.configure and invoke them directly, since the
-      // mocked AutoBuilder never calls them itself.
-      mockAutoBuilder
-          .when(
-              () ->
-                  AutoBuilder.configure(
-                      any(),
-                      any(),
-                      any(),
-                      any(BiConsumer.class),
-                      any(),
-                      any(),
-                      any(),
-                      any(Subsystem.class)))
-          .thenAnswer(
-              invocation -> {
-                Supplier<ChassisVelocities> robotRelativeSpeedsSupplier = invocation.getArgument(2);
-                BiConsumer<ChassisVelocities, DriveFeedforwards> output = invocation.getArgument(3);
-                BooleanSupplier shouldFlipPath = invocation.getArgument(6);
-
-                assertNotNull(robotRelativeSpeedsSupplier.get());
-                output.accept(new ChassisVelocities(1.0, -1.0, 0.5), DriveFeedforwards.zeros(4));
-                assertTrue(shouldFlipPath.getAsBoolean());
-
-                // Also cover the present-but-not-RED case (alliance.get() == RED evaluates false).
-                mockDSBackend
-                    .when(DriverStationBackend::getAlliance)
-                    .thenReturn(Optional.of(Alliance.BLUE));
-                assertFalse(shouldFlipPath.getAsBoolean());
-                mockDSBackend
-                    .when(DriverStationBackend::getAlliance)
-                    .thenReturn(Optional.of(Alliance.RED));
-
-                return null;
-              });
 
       SwerveDrive drive =
           new SwerveDrive(
@@ -298,8 +259,6 @@ public class SwerveDriveTest extends GompeiLibTestBase {
       // runVelocity
       ChassisVelocities targetSpeeds = new ChassisVelocities(1.0, -1.0, 0.5);
       drive.runVelocity(targetSpeeds);
-      // atLeastOnce(): the mocked AutoBuilder.configure's captured output callback also invokes
-      // runVelocity once during construction to cover that lambda.
       verify(flMotors.get(0), atLeastOnce()).setControl(isA(VelocityRequest.VelocityVoltage.class));
 
       // stop
@@ -378,8 +337,7 @@ public class SwerveDriveTest extends GompeiLibTestBase {
 
   @Test
   public void testSwerveDriveStartsTheOdometryThread() {
-    try (MockedStatic<AutoBuilder> _ = mockStatic(AutoBuilder.class);
-        MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
+    try (MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
         MockedStatic<Logger> _ = mockStatic(Logger.class);
         MockedStatic<RobotState> mockRobotState = mockStatic(RobotState.class);
         MockedStatic<PhoenixOdometryThread> mockOdomThread =
@@ -410,8 +368,7 @@ public class SwerveDriveTest extends GompeiLibTestBase {
 
   @Test
   public void testSwerveDriveUsesTheLatestYawWhenOdometrySamplesRunOut() {
-    try (MockedStatic<AutoBuilder> _ = mockStatic(AutoBuilder.class);
-        MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
+    try (MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
         MockedStatic<Logger> _ = mockStatic(Logger.class);
         MockedStatic<RobotState> _ = mockStatic(RobotState.class)) {
 
@@ -446,8 +403,7 @@ public class SwerveDriveTest extends GompeiLibTestBase {
 
   @Test
   public void testSwerveDriveWrapsAMultiTurnYawIntoTheHeading() {
-    try (MockedStatic<AutoBuilder> _ = mockStatic(AutoBuilder.class);
-        MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
+    try (MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
         MockedStatic<Logger> _ = mockStatic(Logger.class);
         MockedStatic<RobotState> _ = mockStatic(RobotState.class)) {
 
@@ -482,34 +438,13 @@ public class SwerveDriveTest extends GompeiLibTestBase {
 
   @Test
   public void testSwerveDriveDisconnectedGyroFallback() {
-    try (MockedStatic<AutoBuilder> mockAutoBuilder = mockStatic(AutoBuilder.class);
-        MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
+    try (MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
         MockedStatic<Logger> _ = mockStatic(Logger.class);
         MockedStatic<RobotState> _ = mockStatic(RobotState.class);
         MockedStatic<DriverStationBackend> mockDSBackend = mockStatic(DriverStationBackend.class)) {
 
       mockRobotConfig.when(RobotConfig::fromGUISettings).thenReturn(mock(RobotConfig.class));
       mockDSBackend.when(DriverStationBackend::getAlliance).thenReturn(Optional.empty());
-
-      // Capture the shouldFlipPath callback to exercise the no-alliance-reported branch.
-      mockAutoBuilder
-          .when(
-              () ->
-                  AutoBuilder.configure(
-                      any(),
-                      any(),
-                      any(),
-                      any(BiConsumer.class),
-                      any(),
-                      any(),
-                      any(),
-                      any(Subsystem.class)))
-          .thenAnswer(
-              invocation -> {
-                BooleanSupplier shouldFlipPath = invocation.getArgument(6);
-                assertFalse(shouldFlipPath.getAsBoolean());
-                return null;
-              });
 
       // Make gyro report disconnected to test kinematics fallback in periodic
       doAnswer(
@@ -541,8 +476,7 @@ public class SwerveDriveTest extends GompeiLibTestBase {
 
   @Test
   public void testSwerveDriveRobotConfigLoadFailure() {
-    try (MockedStatic<AutoBuilder> _ = mockStatic(AutoBuilder.class);
-        MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
+    try (MockedStatic<RobotConfig> mockRobotConfig = mockStatic(RobotConfig.class);
         MockedStatic<Logger> _ = mockStatic(Logger.class);
         MockedStatic<RobotState> mockRobotState = mockStatic(RobotState.class)) {
 

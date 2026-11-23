@@ -15,14 +15,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 
 public class AbsoluteEncoderArmTest extends GompeiLibTestBase {
   private MockedStatic<Logger> logger;
   private MotorIO motor;
   private MotorIOFactory factory;
-  private Subsystem subsystem;
+  private Mechanism subsystem;
   private AbsoluteEncoderIO encoder;
 
   @BeforeEach
@@ -32,7 +32,7 @@ public class AbsoluteEncoderArmTest extends GompeiLibTestBase {
     factory = mock(MotorIOFactory.class);
     when(factory.family()).thenReturn("Mock");
     when(factory.create(any())).thenReturn(motor);
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("Test");
     encoder = mock(AbsoluteEncoderIO.class);
     doAnswer(

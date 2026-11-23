@@ -34,8 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularVelocityUnit;
@@ -47,7 +47,7 @@ public class ArmTest extends GompeiLibTestBase {
   private MotorIOFactory factory;
   private MotorConfig builtConfig;
   private Consumer<MotorTelemetry> reading = t -> {};
-  private Subsystem subsystem;
+  private Mechanism subsystem;
   private ArmConstants constants;
   private Gains<VoltageUnit, AngleUnit, AngularVelocityUnit> slot0;
 
@@ -70,7 +70,7 @@ public class ArmTest extends GompeiLibTestBase {
               builtConfig = invocation.getArgument(0);
               return motor;
             });
-    subsystem = mock(Subsystem.class, CALLS_REAL_METHODS);
+    subsystem = mock(Mechanism.class, CALLS_REAL_METHODS);
     when(subsystem.getName()).thenReturn("TestArmSubsystem");
 
     slot0 = Gains.angularPosition(Volts).withPrefix("arm/slot0").withKG(Volts.of(0.3)).build();
@@ -259,12 +259,12 @@ public class ArmTest extends GompeiLibTestBase {
     Arm arm = new Arm(factory, subsystem, "Arm", constants);
     arm.setPositionGoal(Degrees.of(10));
     Command sysId = arm.characterize();
-    sysId.initialize();
-    sysId.execute();
-    sysId.execute();
+    start(sysId);
+    runScheduler();
+    runScheduler();
     assertEquals(MechanismCore.IDLE, arm.getMode());
     verify(motor, atLeastOnce()).setControl(isA(OpenLoopRequest.VoltageOutput.class));
-    sysId.end(true);
+    scheduler.cancel(sysId);
     verify(motor, atLeastOnce())
         .setControl(new OpenLoopRequest.VoltageOutput(Volts.of(0), true, RequestOptions.DEFAULT));
   }

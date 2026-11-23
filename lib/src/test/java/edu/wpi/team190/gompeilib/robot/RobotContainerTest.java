@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 
 class RobotContainerTest {
 

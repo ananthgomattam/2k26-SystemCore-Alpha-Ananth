@@ -51,7 +51,11 @@ public class JoystickDriveTest extends GompeiLibTestBase {
   /** Runs one loop and returns the robot-relative velocities sent to the drive. */
   private ChassisVelocities run(JoystickDrive command) {
     clearInvocations(drive);
-    command.execute();
+    if (isRunning(command)) {
+      runScheduler();
+    } else {
+      start(command);
+    }
     ArgumentCaptor<ChassisVelocities> captor = ArgumentCaptor.forClass(ChassisVelocities.class);
     verify(drive).runVelocity(captor.capture());
     return captor.getValue();
@@ -90,8 +94,8 @@ public class JoystickDriveTest extends GompeiLibTestBase {
 
   @Test
   public void testDrivesFieldRelativeAndLogs() {
-    JoystickDrive command = builder(sticks(1.0, 0.0, 0.0)).build();
-    assertTrue(command.getRequirements().contains(drive));
+    JoystickDrive command = builder(sticks(1.0, 0.0, 0.0)).named("Joystick Drive");
+    assertTrue(command.requirements().contains(drive));
 
     heading = Rotation2d.fromDegrees(90.0);
     ChassisVelocities velocities = run(command);
@@ -103,7 +107,7 @@ public class JoystickDriveTest extends GompeiLibTestBase {
   @Test
   public void testDrivesInTheDriversPerspective() {
     JoystickDrive command =
-        builder(sticks(1.0, 0.0, 0.0)).withDriverPerspective(() -> Rotation2d.PI).build();
+        builder(sticks(1.0, 0.0, 0.0)).withDriverPerspective(() -> Rotation2d.PI).named("Joystick Drive");
     ChassisVelocities velocities = run(command);
     assertEquals(-MAX_LINEAR, velocities.vx, TOLERANCE);
     assertEquals(0.0, velocities.vy, TOLERANCE);
@@ -113,7 +117,7 @@ public class JoystickDriveTest extends GompeiLibTestBase {
   public void testRunsOnlyHeldBehaviors() {
     AtomicBoolean held = new AtomicBoolean(false);
     JoystickDrive command =
-        builder(sticks(1.0, 0.0, 0.0)).with(held::get, DriveBehaviors.robotRelative()).build();
+        builder(sticks(1.0, 0.0, 0.0)).with(held::get, DriveBehaviors.robotRelative()).named("Joystick Drive");
     heading = Rotation2d.fromDegrees(90.0);
 
     assertEquals(-MAX_LINEAR, run(command).vy, TOLERANCE);
@@ -127,7 +131,7 @@ public class JoystickDriveTest extends GompeiLibTestBase {
         builder(sticks(0.0, 0.0, 1.0))
             .with(() -> true, DriveBehaviors.overrideOmega(() -> RadiansPerSecond.of(1.0)))
             .with(() -> true, DriveBehaviors.overrideOmega(() -> RadiansPerSecond.of(2.0)))
-            .build();
+            .named("Joystick Drive");
     assertEquals(1.0, run(command).omega, TOLERANCE);
   }
 
@@ -137,7 +141,7 @@ public class JoystickDriveTest extends GompeiLibTestBase {
         builder(sticks(1.0, 0.0, 1.0))
             .with(() -> true, DriveBehaviors.scale(() -> 0.5))
             .with(() -> true, DriveBehaviors.overrideOmega(() -> RadiansPerSecond.of(1.0)))
-            .build();
+            .named("Joystick Drive");
     ChassisVelocities first = run(scaleFirst);
     assertEquals(0.5 * MAX_LINEAR, first.vx, TOLERANCE);
     assertEquals(1.0, first.omega, TOLERANCE);
@@ -146,7 +150,7 @@ public class JoystickDriveTest extends GompeiLibTestBase {
         builder(sticks(1.0, 0.0, 1.0))
             .with(() -> true, DriveBehaviors.overrideOmega(() -> RadiansPerSecond.of(1.0)))
             .with(() -> true, DriveBehaviors.scale(() -> 0.5))
-            .build();
+            .named("Joystick Drive");
     ChassisVelocities second = run(overrideFirst);
     assertEquals(0.5 * MAX_LINEAR, second.vx, TOLERANCE);
     assertEquals(1.0, second.omega, TOLERANCE);
@@ -166,9 +170,8 @@ public class JoystickDriveTest extends GompeiLibTestBase {
             engaged.incrementAndGet();
           }
         };
-    JoystickDrive command = builder(DriveSticks.NONE).with(held::get, counting).build();
+    JoystickDrive command = builder(DriveSticks.NONE).with(held::get, counting).named("Joystick Drive");
 
-    command.initialize();
     run(command);
     run(command);
     assertEquals(1, engaged.get());
@@ -180,7 +183,7 @@ public class JoystickDriveTest extends GompeiLibTestBase {
     assertEquals(2, engaged.get());
 
     // Restarting the command re-engages a behavior that is still held
-    command.initialize();
+    scheduler.cancel(command);
     run(command);
     assertEquals(3, engaged.get());
   }

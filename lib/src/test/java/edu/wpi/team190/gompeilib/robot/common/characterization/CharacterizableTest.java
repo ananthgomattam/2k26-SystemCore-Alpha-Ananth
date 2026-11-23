@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.VoltageUnit;
 
@@ -65,9 +65,9 @@ public class CharacterizableTest extends GompeiLibTestBase {
 
     Command command =
         mechanism.characterize(config, mechanism.voltageControl(), mechanism.currentControl());
-    command.initialize();
-    command.execute();
-    command.execute();
+    start(command);
+    runScheduler();
+    runScheduler();
     verify(motors.motor, atLeastOnce()).setControl(isA(OpenLoopRequest.CurrentOutput.class));
   }
 
@@ -97,11 +97,11 @@ public class CharacterizableTest extends GompeiLibTestBase {
                 .withDynamicTimeout(Seconds.of(3))
                 .build(),
             mechanism.voltageControl()::request);
-    assertTrue(command.getRequirements().contains(motors.subsystem));
+    assertTrue(command.requirements().contains(motors.subsystem));
 
-    command.initialize();
-    command.execute();
-    command.execute();
+    start(command);
+    runScheduler();
+    runScheduler();
     assertEquals(MechanismCore.IDLE, mechanism.getMode());
     verify(motors.motor, atLeastOnce()).setControl(isA(OpenLoopRequest.VoltageOutput.class));
     logger.verify(

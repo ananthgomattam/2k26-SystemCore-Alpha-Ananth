@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.littletonrobotics.junction.Logger;
 import org.mockito.MockedStatic;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.AngularVelocityUnit;
 
 public class VelocityControlTest extends GompeiLibTestBase {
@@ -188,8 +188,8 @@ public class VelocityControlTest extends GompeiLibTestBase {
     assertFalse(control.atGoal(RadiansPerSecond.of(120)));
 
     Command wait = control.waitUntilAtGoal();
-    wait.initialize();
-    assertFalse(wait.isFinished());
+    start(wait);
+    assertTrue(isRunning(wait));
   }
 
   @Test
