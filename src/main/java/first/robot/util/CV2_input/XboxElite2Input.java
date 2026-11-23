@@ -1,8 +1,8 @@
 package first.robot.util.CV2_input;
 
-import org.wpilib.command2.CommandScheduler;
-import org.wpilib.command2.button.CommandGamepad;
-import org.wpilib.command2.button.Trigger;
+import org.wpilib.command3.Scheduler;
+import org.wpilib.command3.Trigger;
+import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.driverstation.Gamepad;
 import org.wpilib.event.EventLoop;
 
@@ -16,11 +16,11 @@ public class XboxElite2Input extends CommandGamepad {
    * Constructs a Trigger instance around the top left paddle's digital signal.
    *
    * @return a Trigger instance representing the top left paddle's digital signal attached to the
-   *     {@link CommandScheduler#getDefaultButtonLoop() default scheduler button loop}.
+   *     {@link Scheduler#getDefaultEventLoop() default scheduler button loop}.
    * @see #topLeftPaddle(EventLoop)
    */
   public Trigger topLeftPaddle() {
-    return back(CommandScheduler.getInstance().getDefaultButtonLoop());
+    return back(Scheduler.getDefault().getDefaultEventLoop());
   }
 
   /**
@@ -38,11 +38,11 @@ public class XboxElite2Input extends CommandGamepad {
    * Constructs a Trigger instance around the top right paddle's digital signal.
    *
    * @return a Trigger instance representing the top right paddle's digital signal attached to the
-   *     {@link CommandScheduler#getDefaultButtonLoop() default scheduler button loop}.
+   *     {@link Scheduler#getDefaultEventLoop() default scheduler button loop}.
    * @see #topRightPaddle(EventLoop)
    */
   public Trigger topRightPaddle() {
-    return start(CommandScheduler.getInstance().getDefaultButtonLoop());
+    return start(Scheduler.getDefault().getDefaultEventLoop());
   }
 
   /**
@@ -60,11 +60,11 @@ public class XboxElite2Input extends CommandGamepad {
    * Constructs a Trigger instance around the bottom left paddle's digital signal.
    *
    * @return a Trigger instance representing the bottom left paddle's digital signal attached to the
-   *     {@link CommandScheduler#getDefaultButtonLoop() default scheduler button loop}.
+   *     {@link Scheduler#getDefaultEventLoop() default scheduler button loop}.
    * @see #bottomLeftPaddle(EventLoop)
    */
   public Trigger bottomLeftPaddle() {
-    return leftStick(CommandScheduler.getInstance().getDefaultButtonLoop());
+    return leftStick(Scheduler.getDefault().getDefaultEventLoop());
   }
 
   /**
@@ -82,11 +82,11 @@ public class XboxElite2Input extends CommandGamepad {
    * Constructs a Trigger instance around the bottom right paddle's digital signal.
    *
    * @return a Trigger instance representing the bottom right paddle's digital signal attached to
-   *     the {@link CommandScheduler#getDefaultButtonLoop() default scheduler button loop}.
+   *     the {@link Scheduler#getDefaultEventLoop() default scheduler button loop}.
    * @see #bottomRightPaddle(EventLoop)
    */
   public Trigger bottomRightPaddle() {
-    return rightStick(CommandScheduler.getInstance().getDefaultButtonLoop());
+    return rightStick(Scheduler.getDefault().getDefaultEventLoop());
   }
 
   /**

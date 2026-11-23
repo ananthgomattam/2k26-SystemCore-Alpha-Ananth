@@ -6,6 +6,7 @@ package first.robot;
 
 import edu.wpi.team190.gompeilib.GompeiLib;
 import edu.wpi.team190.gompeilib.io.phoenix.PhoenixUtil;
+import edu.wpi.team190.gompeilib.robot.RobotContainer;
 import edu.wpi.team190.gompeilib.robot.subsystems.VirtualSubsystem;
 import first.robot.util.Elastic;
 import first.robot.util.HubActivePeriod;
@@ -16,13 +17,13 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.CommandScheduler;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Scheduler;
 
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
 
-  private final V3_HorseRobotContainer robotContainer;
+  private final RobotContainer robotContainer;
 
   public Robot() {
     super(Constants.LOOP_PERIOD_SECONDS);
@@ -54,7 +55,14 @@ public class Robot extends LoggedRobot {
     // Start AdvantageKit logger
     Logger.start();
     GompeiLib.init(Constants.getMode(), Constants.TUNING_MODE, Constants.LOOP_PERIOD_SECONDS);
-    robotContainer = new V3_HorseRobotContainer();
+
+    switch (RobotConfig.ROBOT) {
+      case V3_Horse, V3_Horse_SIM:
+        robotContainer = new V3_HorseRobotContainer();
+        break;
+      default:
+        robotContainer = new RobotContainer() {};
+    }
   }
 
   @Override
@@ -63,7 +71,7 @@ public class Robot extends LoggedRobot {
     PhoenixUtil.refreshAll();
     VirtualSubsystem.periodicAll();
     robotContainer.robotPeriodic();
-    CommandScheduler.getInstance().run();
+    Scheduler.getDefault().run();
   }
 
   @Override
@@ -83,7 +91,7 @@ public class Robot extends LoggedRobot {
     autonomousCommand = robotContainer.getAutonomousCommand();
 
     if (autonomousCommand != null) {
-      CommandScheduler.getInstance().schedule(autonomousCommand);
+      Scheduler.getDefault().schedule(autonomousCommand);
     }
   }
 
@@ -98,7 +106,7 @@ public class Robot extends LoggedRobot {
     Elastic.selectTab("Teleoperated");
     HubActivePeriod.initialize();
     if (autonomousCommand != null) {
-      autonomousCommand.cancel();
+      Scheduler.getDefault().cancel(autonomousCommand);
     }
   }
 
@@ -110,7 +118,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void utilityInit() {
-    CommandScheduler.getInstance().cancelAll();
+    Scheduler.getDefault().cancelAll();
   }
 
   @Override

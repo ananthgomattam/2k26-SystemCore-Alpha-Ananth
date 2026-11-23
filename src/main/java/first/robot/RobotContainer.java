@@ -4,8 +4,7 @@
 
 package first.robot;
 
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
+import org.wpilib.command3.Command;
 
 public class RobotContainer {
   public RobotContainer() {
@@ -15,6 +14,10 @@ public class RobotContainer {
   private void configureBindings() {}
 
   public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
+    return Command.noRequirements(
+            coroutine -> {
+              System.out.println("No autonomous routine configured");
+            })
+        .named("RobotContainer: Get Autonomous Command");
   }
 }
