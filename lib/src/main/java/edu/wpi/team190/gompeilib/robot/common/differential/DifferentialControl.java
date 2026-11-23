@@ -234,6 +234,8 @@ public final class DifferentialControl<AvgUnit extends Unit, DiffUnit extends Un
     return atAverageGoal() && atDifferenceGoal();
   }
 
+  // TODO: unlike position/velocity, this doesn't wait a loop before checking; may finish on a stale goal
+
   /** Returns a command that completes once both goals are reached. */
   public Command waitUntilAtGoals() {
     return Command.waitUntil(this::atGoals).named(core.getTopic() + ": Wait Until Difference Goal");
