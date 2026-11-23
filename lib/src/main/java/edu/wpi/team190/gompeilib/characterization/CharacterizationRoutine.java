@@ -18,9 +18,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
-import org.wpilib.command2.Subsystem;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Coroutine;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.sysid.SysIdRoutineLog;
 import org.wpilib.system.Timer;
 import org.wpilib.units.Measure;
@@ -164,7 +164,7 @@ public final class CharacterizationRoutine<U extends Unit> {
   }
 
   private final CharacterizationConfig<U> config;
-  private final Subsystem subsystem;
+  private final Mechanism subsystem;
   private final List<Target<U>> targets;
   private final OutputType effort;
   private final List<List<Sample>> samples = new ArrayList<>();
@@ -173,12 +173,12 @@ public final class CharacterizationRoutine<U extends Unit> {
    * Creates a routine.
    *
    * @param config the ramp, step, timeouts, settle time and legs
-   * @param subsystem the subsystem that owns every target; each leg requires it
+   * @param subsystem the robot mechanism that owns every target; each leg requires it
    * @param targets the targets to drive together
    * @throws IllegalArgumentException if there are no targets, or the output isn't volts or amps
    */
   public CharacterizationRoutine(
-      CharacterizationConfig<U> config, Subsystem subsystem, List<Target<U>> targets) {
+      CharacterizationConfig<U> config, Mechanism subsystem, List<Target<U>> targets) {
     this.config = Objects.requireNonNull(config, "config");
     this.subsystem = Objects.requireNonNull(subsystem, "subsystem");
     this.targets = List.copyOf(targets);
@@ -223,26 +223,25 @@ public final class CharacterizationRoutine<U extends Unit> {
    * @return the command
    */
   public Command command() {
-    List<Command> commands = new ArrayList<>();
-    commands.add(
-        Commands.runOnce(
-            () -> {
+    return Command.requiring(subsystem)
+        .executing(
+            coroutine -> {
               samples.forEach(List::clear);
               targets.forEach(Target::idle);
-            }));
-    boolean first = true;
-    for (Leg leg : Leg.values()) {
-      if (!config.getLegs().contains(leg)) {
-        continue;
-      }
-      if (!first) {
-        commands.add(Commands.defer(() -> Commands.waitTime(config.settleTime().get()), Set.of()));
-      }
-      first = false;
-      commands.add(leg(leg));
-    }
-    commands.add(Commands.defer(() -> Commands.print(report()), Set.of()));
-    return Commands.sequence(commands.toArray(Command[]::new)).withName("Characterization");
+              boolean first = true;
+              for (Leg leg : Leg.values()) {
+                if (!config.getLegs().contains(leg)) {
+                  continue;
+                }
+                if (!first) {
+                  coroutine.wait(config.settleTime().get());
+                }
+                first = false;
+                coroutine.await(leg(leg));
+              }
+              System.out.println(report());
+            })
+        .named(subsystem.getName() + ": Characterization");
   }
 
   /**
@@ -421,8 +420,9 @@ public final class CharacterizationRoutine<U extends Unit> {
     };
   }
 
-  private final class LegCommand extends Command {
+  private final class LegCommand implements Command {
     private final Leg leg;
+    private final String name;
     private final SysIdRoutineLog.State state;
     private final double sign;
     private final Timer timer = new Timer();
@@ -436,8 +436,7 @@ public final class CharacterizationRoutine<U extends Unit> {
       this.leg = leg;
       state = state(leg);
       sign = leg.isForward() ? 1.0 : -1.0;
-      addRequirements(subsystem);
-      setName("characterize-" + state + "-" + subsystem.getName());
+      name = "characterize-" + state + "-" + subsystem.getName();
     }
 
     private boolean anyAtLimit() {
@@ -450,8 +449,7 @@ public final class CharacterizationRoutine<U extends Unit> {
       }
     }
 
-    @Override
-    public void initialize() {
+    private void initialize() {
       reason = null;
       if (anyAtLimit()) {
         reason = EndReason.SKIPPED;
@@ -463,8 +461,7 @@ public final class CharacterizationRoutine<U extends Unit> {
       timer.restart();
     }
 
-    @Override
-    public void execute() {
+    private void execute() {
       if (reason != null) {
         return;
       }
@@ -477,8 +474,7 @@ public final class CharacterizationRoutine<U extends Unit> {
       log(state);
     }
 
-    @Override
-    public boolean isFinished() {
+    private boolean isFinished() {
       if (reason != null) {
         return true;
       }
@@ -490,8 +486,7 @@ public final class CharacterizationRoutine<U extends Unit> {
       return reason != null;
     }
 
-    @Override
-    public void end(boolean interrupted) {
+    private void end(boolean interrupted) {
       if (interrupted) {
         reason = EndReason.CANCELLED;
       }
@@ -502,6 +497,34 @@ public final class CharacterizationRoutine<U extends Unit> {
       for (Target<U> target : targets) {
         Logger.recordOutput(target.topic() + "/Characterization/EndReason", reason.toString());
       }
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public Set<Mechanism> requirements() {
+      return Set.of(subsystem);
+    }
+
+    @Override
+    public void run(Coroutine coroutine) {
+      initialize();
+      while (true) {
+        execute();
+        if (isFinished()) {
+          break;
+        }
+        coroutine.yield();
+      }
+      end(false);
+    }
+
+    @Override
+    public void onCancel() {
+      end(true);
     }
   }
 }

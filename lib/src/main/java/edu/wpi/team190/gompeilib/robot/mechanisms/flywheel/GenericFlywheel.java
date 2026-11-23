@@ -29,7 +29,7 @@ import edu.wpi.team190.gompeilib.robot.common.openloop.VoltageControllable;
 import edu.wpi.team190.gompeilib.robot.common.position.MotionReadable;
 import edu.wpi.team190.gompeilib.robot.common.velocity.VelocityControl;
 import edu.wpi.team190.gompeilib.robot.common.velocity.VelocityControllable;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.units.AngleUnit;
 import org.wpilib.units.AngularAccelerationUnit;

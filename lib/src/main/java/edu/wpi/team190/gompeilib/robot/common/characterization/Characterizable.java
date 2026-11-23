@@ -10,7 +10,7 @@ import edu.wpi.team190.gompeilib.robot.common.openloop.OpenLoopControl;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;

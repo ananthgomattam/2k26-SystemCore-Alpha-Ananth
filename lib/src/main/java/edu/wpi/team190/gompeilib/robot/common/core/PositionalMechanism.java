@@ -22,7 +22,7 @@ import edu.wpi.team190.gompeilib.robot.common.position.PositionControllable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.DimensionlessUnit;
