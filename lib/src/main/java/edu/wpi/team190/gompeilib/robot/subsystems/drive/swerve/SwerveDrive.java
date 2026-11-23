@@ -4,10 +4,8 @@ package edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve;
 import static edu.wpi.team190.gompeilib.math.CustomUnits.*;
 import static org.wpilib.units.Units.*;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.team190.gompeilib.GompeiLib;
 import edu.wpi.team190.gompeilib.characterization.FeedforwardFit.Sample;
 import edu.wpi.team190.gompeilib.control.Gains;
@@ -22,13 +20,11 @@ import edu.wpi.team190.gompeilib.logging.Trace;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.SubsystemBase;
-import org.wpilib.driverstation.Alliance;
+import org.wpilib.command3.Mechanism;
+import org.wpilib.command3.Scheduler;
 import org.wpilib.driverstation.RobotState;
-import org.wpilib.driverstation.internal.DriverStationBackend;
 import org.wpilib.math.controller.PIDController;
 import org.wpilib.math.filter.LinearFilter;
 import org.wpilib.math.geometry.Pose2d;
@@ -48,7 +44,7 @@ import org.wpilib.units.AngularVelocityUnit;
 import org.wpilib.units.DistanceUnit;
 import org.wpilib.units.LinearVelocityUnit;
 
-public class SwerveDrive extends SubsystemBase {
+public class SwerveDrive implements Mechanism {
   private final SwerveDriveConstants driveConstants;
 
   private final GyroIO gyroIO;
@@ -143,39 +139,13 @@ public class SwerveDrive extends SubsystemBase {
 
     try {
       config = RobotConfig.fromGUISettings();
-      AutoBuilder.configure(
-          this.robotPoseSupplier,
-          resetPoseConsumer, // resetPose
-          () -> getChassisVelocities(), // get robotRelativeSpeeds
-          (speeds, feedforwards) -> {
-            // Retained from Choreo; switch to runVelocityTorque(speeds, forces) if needed.
-            @SuppressWarnings("unused")
-            List<Vector<N2>> forces =
-                IntStream.range(0, 4)
-                    .mapToObj(
-                        i ->
-                            VecBuilder.fill(
-                                feedforwards.robotRelativeForcesXNewtons()[i],
-                                feedforwards.robotRelativeForcesYNewtons()[i]))
-                    .toList();
-
-            runVelocity(speeds);
-          },
-          new PPHolonomicDriveController(
-              translationConstants(driveConstants.autoTranslationGains),
-              rotationConstants(driveConstants.autoRotationGains)),
-          config,
-          () -> {
-            var alliance = DriverStationBackend.getAlliance();
-            if (alliance.isPresent()) {
-              return alliance.get() == Alliance.RED;
-            }
-            return false;
-          },
-          this);
+      // TODO: v3 path following + named commands. PathPlanner's AutoBuilder/NamedCommands are
+      // Commands v2.
     } catch (Exception e) {
       throw new RuntimeException("Failed to load PathPlanner robot config", e);
     }
+
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   @Trace
