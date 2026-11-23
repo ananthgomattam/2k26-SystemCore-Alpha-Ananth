@@ -9,14 +9,14 @@ import first.robot.v3_Horse.V3_HorseRobotState;
 import first.robot.v3_Horse.subsystems.rollerfloor.V3_HorseRollerFloorConstants.RollerFloorState;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
-import org.wpilib.command2.SubsystemBase;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Mechanism;
+import org.wpilib.command3.Scheduler;
 import org.wpilib.driverstation.MatchState;
 import org.wpilib.units.VoltageUnit;
 import org.wpilib.units.measure.Voltage;
 
-public class V3_HorseRollerFloor extends SubsystemBase {
+public class V3_HorseRollerFloor implements Mechanism {
   private final GenericRoller rollerFloor;
   @Getter private RollerFloorState rollerFloorGoal;
   private final Setpoint<VoltageUnit> rollerFloorSetpoint,
@@ -60,9 +60,10 @@ public class V3_HorseRollerFloor extends SubsystemBase {
             V3_HorseRollerFloorConstants.ROLLER_FLOOR_CONSTANTS,
             "Roller",
             rollerFloorSetpoint);
+
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
-  @Override
   public void periodic() {
     switch (rollerFloorGoal) {
       case RUN:
@@ -100,7 +101,11 @@ public class V3_HorseRollerFloor extends SubsystemBase {
   }
 
   public Command setState(RollerFloorState state) {
-    return Commands.runOnce(() -> rollerFloorGoal = state);
+    return Command.noRequirements(
+            coroutine -> {
+              rollerFloorGoal = state;
+            })
+        .named("RollerFloor State Set To " + state.toString());
   }
 
   public void setRollerFloorVoltage(Voltage voltage) {
@@ -120,22 +125,30 @@ public class V3_HorseRollerFloor extends SubsystemBase {
   }
 
   public Command incrementRollerFloorVelocity() {
-    return Commands.either(
-        Commands.runOnce(rollerFloorSetpoint::increment),
-        Commands.either(
-            Commands.runOnce(rollerFloorOverrideSetpoint::increment),
-            Commands.runOnce(() -> stopRollerFloor()),
-            () -> rollerFloorGoal.equals(RollerFloorState.OVERRIDE)),
-        () -> rollerFloorGoal.equals(RollerFloorState.RUN));
+    return Command.noRequirements(
+            coroutine -> {
+              if (rollerFloorGoal.equals(RollerFloorState.RUN)) {
+                rollerFloorSetpoint.increment();
+              } else if (rollerFloorGoal.equals(RollerFloorState.OVERRIDE)) {
+                rollerFloorOverrideSetpoint.increment();
+              } else {
+                stopRollerFloor();
+              }
+            })
+        .named("Roller Floor: Increment Voltage");
   }
 
   public Command decrementRollerFloorVelocity() {
-    return Commands.either(
-        Commands.runOnce(rollerFloorSetpoint::decrement),
-        Commands.either(
-            Commands.runOnce(rollerFloorOverrideSetpoint::decrement),
-            Commands.runOnce(() -> stopRollerFloor()),
-            () -> rollerFloorGoal.equals(RollerFloorState.OVERRIDE)),
-        () -> rollerFloorGoal.equals(RollerFloorState.RUN));
+    return Command.noRequirements(
+            coroutine -> {
+              if (rollerFloorGoal.equals(RollerFloorState.RUN)) {
+                rollerFloorSetpoint.decrement();
+              } else if (rollerFloorGoal.equals(RollerFloorState.OVERRIDE)) {
+                rollerFloorOverrideSetpoint.decrement();
+              } else {
+                stopRollerFloor();
+              }
+            })
+        .named("Roller Floor: Decrement Voltage");
   }
 }
