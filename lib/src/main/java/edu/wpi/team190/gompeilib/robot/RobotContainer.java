@@ -1,13 +1,12 @@
 package edu.wpi.team190.gompeilib.robot;
 
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
+import org.wpilib.command3.Command;
 
 public interface RobotContainer {
 
   public default void robotPeriodic() {}
 
   public default Command getAutonomousCommand() {
-    return Commands.none();
+    return Command.noRequirements(corountine -> {}).named("Empty Autonomous Command");
   }
 }

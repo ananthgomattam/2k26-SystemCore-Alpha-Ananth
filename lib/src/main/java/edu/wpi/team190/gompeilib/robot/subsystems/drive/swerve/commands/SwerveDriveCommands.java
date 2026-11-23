@@ -17,12 +17,12 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.wpilib.command2.Command;
-import org.wpilib.command2.Commands;
+import org.wpilib.command3.Command;
 import org.wpilib.math.filter.SlewRateLimiter;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
 import org.wpilib.math.util.Units;
+import org.wpilib.system.Timer;
 import org.wpilib.units.Measure;
 import org.wpilib.units.Unit;
 import org.wpilib.units.measure.Distance;
@@ -36,7 +36,7 @@ public final class SwerveDriveCommands {
 
   /**
    * Starts a joystick drive. Bind behaviors with {@link JoystickDrive.Builder#with}, then {@link
-   * JoystickDrive.Builder#build}.
+   * JoystickDrive.Builder#named}.
    *
    * @param drive the drive
    * @param constants the drive's constants, for the driver deadband
@@ -59,12 +59,12 @@ public final class SwerveDriveCommands {
       Supplier<Rotation2d> target) {
     return joystickDrive(drive, constants, DriveSticks.NONE, heading)
         .with(() -> true, DriveBehaviors.faceHeading(constants, target))
-        .build();
+        .named("Rotate To Angle");
   }
 
   /** Stops the drive with its modules in an X, holding until interrupted. */
   public static Command stop(SwerveDrive drive) {
-    return Commands.run(drive::stopWithX, drive);
+    return drive.runRepeatedly(drive::stopWithX).named("X Lock");
   }
 
   /**
@@ -145,47 +145,39 @@ public final class SwerveDriveCommands {
   public static Command wheelRadiusCharacterization(
       SwerveDrive drive, SwerveDriveConstants constants) {
     SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
+    Timer timer = new Timer();
     WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
+    state.measuring = false;
 
-    return Commands.parallel(
-        // Drive control sequence
-        Commands.sequence(
-            // Reset acceleration limiter
-            Commands.runOnce(() -> limiter.reset(0.0)),
-
-            // Turn in place, accelerating up to full speed
-            Commands.run(
-                () ->
-                    drive.runVelocity(
-                        new ChassisVelocities(
-                            0.0, 0.0, limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY))),
-                drive)),
-
-        // Measurement sequence
-        Commands.sequence(
-            // Wait for modules to fully orient before starting measurement
-            Commands.waitSeconds(1.0),
-
-            // Record starting measurement
-            Commands.runOnce(
-                () -> {
+    return drive
+        .run(
+            coroutine -> {
+              limiter.reset(0.0);
+              timer.restart();
+              while (true) {
+                drive.runVelocity(
+                    new ChassisVelocities(0.0, 0.0, limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY)));
+                if (!state.measuring && timer.hasElapsed(1.0)) {
                   state.positions = drive.getWheelRadiusCharacterizationPositions();
                   state.lastAngle = drive.getRawGyroRotation();
                   state.gyroDelta = 0.0;
-                }),
+                  state.measuring = true;
+                } else if (state.measuring) {
+                  Rotation2d rotation = drive.getRawGyroRotation();
+                  state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
+                  state.lastAngle = rotation;
+                }
 
-            // Update gyro delta
-            Commands.run(
-                    () -> {
-                      Rotation2d rotation = drive.getRawGyroRotation();
-                      state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
-                      state.lastAngle = rotation;
-                    })
-
-                // When cancelled, calculate and print results
-                .finallyDo(
-                    () ->
-                        printWheelRadius(state, drive, constants.driveConfig.driveBaseRadius()))));
+                coroutine.yield();
+              }
+            })
+        .whenCanceled(
+            () -> {
+              if (state.measuring) {
+                printWheelRadius(state, drive, constants.driveConfig.driveBaseRadius());
+              }
+            })
+        .named("Wheel Radius Characterization");
   }
 
   private static void printWheelRadius(
@@ -213,5 +205,6 @@ public final class SwerveDriveCommands {
     double[] positions = new double[4];
     Rotation2d lastAngle = Rotation2d.ZERO;
     double gyroDelta = 0.0;
+    boolean measuring = false;
   }
 }

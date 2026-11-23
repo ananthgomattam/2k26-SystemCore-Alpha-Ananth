@@ -6,10 +6,13 @@ import static org.wpilib.units.Units.RadiansPerSecond;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDrive;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
-import org.wpilib.command2.Command;
+import org.wpilib.command3.Command;
+import org.wpilib.command3.Coroutine;
+import org.wpilib.command3.Mechanism;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
 import org.wpilib.math.util.MathUtil;
@@ -23,7 +26,7 @@ import org.wpilib.math.util.MathUtil;
  * commanded velocities. Adding a behavior is a new {@link Builder#with} binding; it never changes
  * this command's signature.
  */
-public final class JoystickDrive extends Command {
+public final class JoystickDrive implements Command {
   private static final class Binding {
     private final BooleanSupplier trigger;
     private final DriveBehavior behavior;
@@ -41,15 +44,16 @@ public final class JoystickDrive extends Command {
   private final Supplier<Rotation2d> heading;
   private final Supplier<Rotation2d> driverPerspective;
   private final List<Binding> bindings;
+  private final String name;
 
   private JoystickDrive(Builder builder) {
     drive = builder.drive;
     sticks = builder.sticks;
     deadband = builder.deadband;
     heading = builder.heading;
+    name = builder.name;
     driverPerspective = builder.driverPerspective;
     bindings = List.copyOf(builder.bindings);
-    addRequirements(drive);
   }
 
   /**
@@ -74,13 +78,11 @@ public final class JoystickDrive extends Command {
         RadiansPerSecond.of(omega * maxAngularRadPerSec));
   }
 
-  @Override
-  public void initialize() {
+  private void initialize() {
     for (Binding binding : bindings) binding.held = false;
   }
 
-  @Override
-  public void execute() {
+  private void execute() {
     DriveBehavior.Context context =
         new DriveBehavior.Context(heading.get(), drive.getMeasuredChassisVelocities());
     DriveRequest request =
@@ -102,6 +104,25 @@ public final class JoystickDrive extends Command {
     drive.runVelocity(velocities);
   }
 
+  @Override
+  public String name() {
+    return name;
+  }
+
+  @Override
+  public Set<Mechanism> requirements() {
+    return Set.of(drive);
+  }
+
+  @Override
+  public void run(Coroutine coroutine) {
+    initialize();
+    while (true) {
+      execute();
+      coroutine.yield();
+    }
+  }
+
   /** Builds a {@link JoystickDrive}. Start one with {@link SwerveDriveCommands#joystickDrive}. */
   public static final class Builder {
     private final SwerveDrive drive;
@@ -110,6 +131,7 @@ public final class JoystickDrive extends Command {
     private final Supplier<Rotation2d> heading;
     private Supplier<Rotation2d> driverPerspective = () -> Rotation2d.ZERO;
     private final List<Binding> bindings = new ArrayList<>();
+    private String name;
 
     Builder(SwerveDrive drive, DriveSticks sticks, double deadband, Supplier<Rotation2d> heading) {
       this.drive = drive;
@@ -139,7 +161,8 @@ public final class JoystickDrive extends Command {
       return this;
     }
 
-    public JoystickDrive build() {
+    public JoystickDrive named(String name) {
+      this.name = name;
       return new JoystickDrive(this);
     }
   }
