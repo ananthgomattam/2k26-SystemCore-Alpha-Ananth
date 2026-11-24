@@ -65,7 +65,7 @@ public class V3_HorseAutoDoubleDip {
                   drive, rollerFloor, shooter, intake, shot2Seconds),
               V3_HorseCompositeCommands.stopShooter(rollerFloor, shooter))
           .named("Auto: Double Dip");
-    } catch (Exception e) {
+    } catch (Exception | LinkageError e) {
       e.printStackTrace();
       return Command.noRequirements(
               coroutine ->
@@ -92,7 +92,7 @@ public class V3_HorseAutoDoubleDip {
       List<Pose2d> poses = new ArrayList<>(DOUBLE_DIP_1.getPathPoses());
       poses.addAll(DOUBLE_DIP_2.getPathPoses());
       return poses.toArray(new Pose2d[0]);
-    } catch (Exception e) {
+    } catch (Exception | LinkageError e) {
       return new Pose2d[0];
     }
   }
