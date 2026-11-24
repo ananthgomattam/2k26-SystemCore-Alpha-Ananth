@@ -117,6 +117,8 @@ final class DriveCommandsTestSupport {
     when(drive.getMaxLinearSpeedMetersPerSec()).thenReturn(MAX_LINEAR);
     when(drive.getMaxAngularSpeedRadPerSec()).thenReturn(MAX_ANGULAR);
     when(drive.getMeasuredChassisVelocities()).thenReturn(new ChassisVelocities());
+    doCallRealMethod().when(drive).run(any());
+    doCallRealMethod().when(drive).runRepeatedly(any());
     return drive;
   }
 }

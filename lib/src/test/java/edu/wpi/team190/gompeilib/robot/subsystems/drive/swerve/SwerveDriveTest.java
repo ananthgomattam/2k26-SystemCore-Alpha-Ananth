@@ -7,7 +7,6 @@ import static org.wpilib.units.Units.*;
 
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.util.DriveFeedforwards;
 import edu.wpi.team190.gompeilib.GompeiLibTestBase;
 import edu.wpi.team190.gompeilib.control.Gains;
 import edu.wpi.team190.gompeilib.control.TestGains;
@@ -31,8 +30,6 @@ import edu.wpi.team190.gompeilib.io.phoenix.PhoenixOdometryThread;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;

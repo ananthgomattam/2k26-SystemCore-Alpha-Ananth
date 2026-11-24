@@ -587,7 +587,7 @@ public class CharacterizationRoutineTest extends GompeiLibTestBase {
    * Characterizes a simulated mechanism with a known plant and checks the fit recovers it: the sim
    * and the characterization agree, so gains tuned against one hold against the other.
    */
-  private static <U extends Unit> Result roundTrip(
+  private <U extends Unit> Result roundTrip(
       PlantCharacterization<?> plant,
       CharacterizationConfig<U> config,
       Function<Measure<U>, MotorRequest> request) {

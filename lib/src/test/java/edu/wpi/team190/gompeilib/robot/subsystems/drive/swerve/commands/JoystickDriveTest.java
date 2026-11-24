@@ -107,7 +107,9 @@ public class JoystickDriveTest extends GompeiLibTestBase {
   @Test
   public void testDrivesInTheDriversPerspective() {
     JoystickDrive command =
-        builder(sticks(1.0, 0.0, 0.0)).withDriverPerspective(() -> Rotation2d.PI).named("Joystick Drive");
+        builder(sticks(1.0, 0.0, 0.0))
+            .withDriverPerspective(() -> Rotation2d.PI)
+            .named("Joystick Drive");
     ChassisVelocities velocities = run(command);
     assertEquals(-MAX_LINEAR, velocities.vx, TOLERANCE);
     assertEquals(0.0, velocities.vy, TOLERANCE);
@@ -117,7 +119,9 @@ public class JoystickDriveTest extends GompeiLibTestBase {
   public void testRunsOnlyHeldBehaviors() {
     AtomicBoolean held = new AtomicBoolean(false);
     JoystickDrive command =
-        builder(sticks(1.0, 0.0, 0.0)).with(held::get, DriveBehaviors.robotRelative()).named("Joystick Drive");
+        builder(sticks(1.0, 0.0, 0.0))
+            .with(held::get, DriveBehaviors.robotRelative())
+            .named("Joystick Drive");
     heading = Rotation2d.fromDegrees(90.0);
 
     assertEquals(-MAX_LINEAR, run(command).vy, TOLERANCE);
@@ -170,7 +174,8 @@ public class JoystickDriveTest extends GompeiLibTestBase {
             engaged.incrementAndGet();
           }
         };
-    JoystickDrive command = builder(DriveSticks.NONE).with(held::get, counting).named("Joystick Drive");
+    JoystickDrive command =
+        builder(DriveSticks.NONE).with(held::get, counting).named("Joystick Drive");
 
     run(command);
     run(command);
