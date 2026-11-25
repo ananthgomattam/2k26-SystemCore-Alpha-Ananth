@@ -266,13 +266,15 @@ public class V3_HorseRobotContainer implements RobotContainer {
 
   private void configureAutos() {
 
-    // TODO: Named commands for v3
-    // NamedCommands.registerCommand("INTAKE", V3_HorseCompositeCommands.intakeCollect(intake));
-    // NamedCommands.registerCommand("STOP_INTAKE", intake.setRollerState(RollerState.IDLE));
+    Map<String, Command> markerCommands =
+        Map.of(
+            "INTAKE", V3_HorseCompositeCommands.intakeCollect(intake),
+            "STOP_INTAKE", intake.setRollerState(RollerState.IDLE));
 
     autoChooser.add(
         "Back up and shoot",
-        V3_HorseAutoBackUpShoot.getAutoRoutine(drive, shooter, rollerFloor, intake));
+        V3_HorseAutoBackUpShoot.getAutoRoutine(
+            drive, shooter, rollerFloor, intake, markerCommands));
 
     autoChooser.add(
         "Left Cheesy",
@@ -281,6 +283,7 @@ public class V3_HorseRobotContainer implements RobotContainer {
             shooter,
             rollerFloor,
             intake,
+            markerCommands,
             "DOUBLE_DIP_1",
             "DOUBLE_DIP_2_CHEESY",
             false,
@@ -294,6 +297,7 @@ public class V3_HorseRobotContainer implements RobotContainer {
             shooter,
             rollerFloor,
             intake,
+            markerCommands,
             "DOUBLE_DIP_1",
             "DOUBLE_DIP_2_CHEESY",
             true,
@@ -307,6 +311,7 @@ public class V3_HorseRobotContainer implements RobotContainer {
             shooter,
             rollerFloor,
             intake,
+            markerCommands,
             "DOUBLE_DIP_1",
             "DOUBLE_DIP_2_OUTLIERS",
             false,
@@ -320,6 +325,7 @@ public class V3_HorseRobotContainer implements RobotContainer {
             shooter,
             rollerFloor,
             intake,
+            markerCommands,
             "DOUBLE_DIP_1",
             "DOUBLE_DIP_2_OUTLIERS",
             true,
@@ -329,7 +335,8 @@ public class V3_HorseRobotContainer implements RobotContainer {
     autoChooser.addDefault(
         "Do Nothing", Command.noRequirements(coroutine -> {}).named("Auto: Do Nothing"));
 
-    // Characterizations of the closed-loop mechanisms print each one's plant and gains when they
+    // Characterizations of the closed-loop mechanisms print each one's plant and
+    // gains when they
     // finish
     autoChooser.add(
         "Characterize: Drive",
@@ -359,7 +366,8 @@ public class V3_HorseRobotContainer implements RobotContainer {
                 driver.leftTrigger(),
                 DriveBehaviors.faceHeading(
                     V3_HorseConstants.DRIVE_CONSTANTS, V3_HorseRobotState::getCardinalDirection))
-            // School bus: face the direction of travel (lowest priority, toggled on right stick)
+            // School bus: face the direction of travel (lowest priority, toggled on right
+            // stick)
             .with(
                 V3_HorseDriveCommands.schoolBusActive(
                     () -> -driver.getLeftY(), () -> -driver.getLeftX()),

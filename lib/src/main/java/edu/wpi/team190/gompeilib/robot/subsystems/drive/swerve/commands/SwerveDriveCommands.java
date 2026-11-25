@@ -3,6 +3,12 @@ package edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.commands;
 import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Volts;
 
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.PathPoint;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
+import edu.wpi.team190.gompeilib.auto.AutoPath;
+import edu.wpi.team190.gompeilib.auto.PathMarker;
 import edu.wpi.team190.gompeilib.characterization.CharacterizationConfig;
 import edu.wpi.team190.gompeilib.characterization.CharacterizationConfig.Leg;
 import edu.wpi.team190.gompeilib.characterization.CharacterizationRoutine;
@@ -14,11 +20,15 @@ import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDrive;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDriveConstants;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.wpilib.command3.Command;
 import org.wpilib.math.filter.SlewRateLimiter;
+import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
 import org.wpilib.math.util.Units;
@@ -206,5 +216,90 @@ public final class SwerveDriveCommands {
     Rotation2d lastAngle = Rotation2d.ZERO;
     double gyroDelta = 0.0;
     boolean measuring = false;
+  }
+
+  /**
+   * Returns the time at which a position is crossed on a path
+   *
+   * @param path The Auto Path
+   * @param trajectory The Auto Trajectory (Time Based)
+   * @param position The position we are trying to find the time of
+   * @return The time
+   */
+  private static double timeAt(
+      PathPlannerPath path, PathPlannerTrajectory trajectory, double position) {
+    List<PathPoint> pathPoints = path.getAllPathPoints();
+    int bestIndex = 0;
+    double smallestDiff = Math.abs(pathPoints.get(0).waypointRelativePos - position);
+    for (int i = 0; i < pathPoints.size(); i++) {
+      double diff = Math.abs(pathPoints.get(i).waypointRelativePos - position);
+      if (diff < smallestDiff) {
+        smallestDiff = diff;
+        bestIndex = i;
+      }
+    }
+    return trajectory.getState(bestIndex).timeSeconds;
+  }
+
+  /**
+   * Folows an auto path from PathPlanner
+   *
+   * @param drive The drive subsystem
+   * @param autoPath The path to follow
+   * @param markerCommands The PathPlanner named commands
+   * @return A coroutine for the auto path follow
+   */
+  public static Command followPath(
+      SwerveDrive drive, AutoPath autoPath, Map<String, Command> markerCommands) {
+    return drive
+        .run(
+            coroutine -> {
+              PathPlannerPath path =
+                  drive.shouldFlipPath() ? autoPath.path().flipPath() : autoPath.path();
+              PPHolonomicDriveController controller = drive.getPathController();
+              Pose2d startPose = drive.getPose();
+              ChassisVelocities startSpeeds = drive.getMeasuredChassisVelocities();
+              controller.reset(startPose, startSpeeds);
+              PathPlannerTrajectory trajectory =
+                  path.generateTrajectory(
+                      startSpeeds, startPose.getRotation(), drive.getPathConfig());
+
+              List<PathMarker> waiting = new ArrayList<>(autoPath.markers());
+              Map<PathMarker, Command> zones = new HashMap<>();
+
+              Timer timer = new Timer();
+              timer.start();
+              while (!timer.hasElapsed(trajectory.getTotalTimeSeconds())) {
+                double time = timer.get();
+                drive.runVelocity(
+                    controller.calculateRobotRelativeSpeeds(
+                        drive.getPose(), trajectory.sample(time)));
+
+                for (PathMarker marker : new ArrayList<>(waiting)) {
+                  if (time >= timeAt(path, trajectory, marker.start())) {
+                    if (markerCommands.containsKey(marker.command())) {
+                      coroutine.fork(markerCommands.get(marker.command()));
+                      if (marker.isZone()) {
+                        zones.put(marker, markerCommands.get(marker.command()));
+                      }
+                    }
+                    waiting.remove(marker);
+                  }
+                }
+
+                for (PathMarker marker : new ArrayList<>(zones.keySet())) {
+                  if (time >= timeAt(path, trajectory, marker.end())) {
+                    coroutine.scheduler().cancel(zones.get(marker));
+                    zones.remove(marker);
+                  }
+                }
+                coroutine.yield();
+              }
+
+              if (path.getGoalEndState().velocityMPS() < 0.1) {
+                drive.stop();
+              }
+            })
+        .named("Drive: Follow Path");
   }
 }

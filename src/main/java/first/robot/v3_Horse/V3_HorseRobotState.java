@@ -12,6 +12,7 @@ import first.robot.FieldConstants;
 import first.robot.util.AllianceFlipUtil;
 import first.robot.util.HubActivePeriod;
 import first.robot.util.NTPrefixes;
+import first.robot.v3_Horse.commands.V3_HorseDriveCommands;
 import first.robot.v3_Horse.subsystems.shooter.V3_HorseShooterConstants;
 import java.util.HashSet;
 import java.util.List;
@@ -264,6 +265,15 @@ public class V3_HorseRobotState {
     Translation2d aimTarget = inAllianceZone ? hubTranslation : feedTranslation;
     // Shooter fires out the back of the robot, so face the rear toward the target
     aimAngle = aimTarget.minus(aimFrom).getAngle().orElse(Rotation2d.ZERO).plus(Rotation2d.PI);
+
+    aimAngle = aimTarget.minus(aimFrom).getAngle().orElse(Rotation2d.ZERO).plus(Rotation2d.PI);
+
+    Logger.recordOutput(NTPrefixes.ROBOT_STATE + "Aim/Angle", aimAngle);
+    Logger.recordOutput(
+        NTPrefixes.ROBOT_STATE + "Aim/Error Degrees", getHeading().minus(aimAngle).getDegrees());
+    Logger.recordOutput(
+        NTPrefixes.ROBOT_STATE + "Aim/Aimed",
+        V3_HorseDriveCommands.atAngle(getHeading(), aimAngle));
 
     Logger.recordOutput(NTPrefixes.POSE_DATA + "Distance To Hub", distanceToHub);
     Logger.recordOutput(

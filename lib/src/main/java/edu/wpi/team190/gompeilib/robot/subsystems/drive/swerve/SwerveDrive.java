@@ -6,6 +6,7 @@ import static org.wpilib.units.Units.*;
 
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.team190.gompeilib.GompeiLib;
 import edu.wpi.team190.gompeilib.characterization.FeedforwardFit.Sample;
 import edu.wpi.team190.gompeilib.control.Gains;
@@ -24,7 +25,9 @@ import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.driverstation.Alliance;
 import org.wpilib.driverstation.RobotState;
+import org.wpilib.driverstation.internal.DriverStationBackend;
 import org.wpilib.math.controller.PIDController;
 import org.wpilib.math.filter.LinearFilter;
 import org.wpilib.math.geometry.Pose2d;
@@ -68,6 +71,8 @@ public class SwerveDrive implements Mechanism {
   private final PIDController autoHeadingController;
 
   private RobotConfig config;
+
+  private final PPHolonomicDriveController pathController;
 
   public SwerveDrive(
       SwerveDriveConstants driveConstants,
@@ -144,6 +149,11 @@ public class SwerveDrive implements Mechanism {
     } catch (Exception e) {
       throw new RuntimeException("Failed to load PathPlanner robot config", e);
     }
+
+    pathController =
+        new PPHolonomicDriveController(
+            translationConstants(driveConstants.autoTranslationGains),
+            rotationConstants(driveConstants.autoRotationGains));
 
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
@@ -484,5 +494,41 @@ public class SwerveDrive implements Mechanism {
     for (SwerveModule s : modules) {
       s.updateCurrentLimits(driveCurrentLimit, turnCurrentLimit);
     }
+  }
+
+  /**
+   * Gets robot's pose
+   *
+   * @return The robot's pose
+   */
+  public Pose2d getPose() {
+    return robotPoseSupplier.get();
+  }
+
+  /**
+   * Gets the robot config from PathPlanner
+   *
+   * @return The robot's config
+   */
+  public RobotConfig getPathConfig() {
+    return config;
+  }
+
+  /**
+   * Gets the path controller
+   *
+   * @return The path controller
+   */
+  public PPHolonomicDriveController getPathController() {
+    return pathController;
+  }
+
+  /**
+   * Checks if the auto path should be flipped
+   *
+   * @return True if we are on RED alliance
+   */
+  public boolean shouldFlipPath() {
+    return DriverStationBackend.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
   }
 }
