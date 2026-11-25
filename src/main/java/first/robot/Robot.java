@@ -77,6 +77,8 @@ public class Robot extends LoggedRobot {
   @Override
   public void disabledInit() {
     Elastic.selectTab("Autonomous");
+    Scheduler.getDefault().cancelAll();
+
   }
 
   @Override
