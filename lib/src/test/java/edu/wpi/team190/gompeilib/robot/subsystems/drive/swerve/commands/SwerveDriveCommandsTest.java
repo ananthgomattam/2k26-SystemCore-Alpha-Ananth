@@ -9,7 +9,16 @@ import static org.wpilib.units.Units.Percent;
 import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
+import com.pathplanner.lib.config.ModuleConfig;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.team190.gompeilib.GompeiLibTestBase;
+import edu.wpi.team190.gompeilib.auto.AutoPath;
+import edu.wpi.team190.gompeilib.auto.PathMarker;
 import edu.wpi.team190.gompeilib.characterization.CharacterizationConfig;
 import edu.wpi.team190.gompeilib.characterization.CharacterizationConfig.Leg;
 import edu.wpi.team190.gompeilib.characterization.FeedforwardFit.Sample;
@@ -19,6 +28,9 @@ import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDrive;
 import edu.wpi.team190.gompeilib.robot.subsystems.drive.swerve.SwerveDriveConstants;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,8 +38,11 @@ import org.littletonrobotics.junction.Logger;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.wpilib.command3.Command;
+import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
+import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
+import org.wpilib.math.system.DCMotor;
 import org.wpilib.simulation.SimHooks;
 import org.wpilib.units.CurrentUnit;
 import org.wpilib.units.DimensionlessUnit;
@@ -179,5 +194,122 @@ public class SwerveDriveCommandsTest extends GompeiLibTestBase {
     assertTrue(
         printed.toString().contains(String.format("%.3f meters", expectedRadius)),
         printed.toString());
+  }
+
+  private static AutoPath straightPath(List<PathMarker> markers) {
+    PathPlannerPath path =
+        new PathPlannerPath(
+            PathPlannerPath.waypointsFromPoses(
+                new Pose2d(0.0, 0.0, Rotation2d.ZERO), new Pose2d(2.0, 0.0, Rotation2d.ZERO)),
+            new PathConstraints(2.0, 2.0, 2.0 * Math.PI, 4.0 * Math.PI),
+            null,
+            new GoalEndState(0.0, Rotation2d.ZERO));
+    return new AutoPath(path, markers);
+  }
+
+  private static Command forever(String name) {
+    return Command.noRequirements(
+            coroutine -> {
+              while (true) {
+                coroutine.yield();
+              }
+            })
+        .named(name);
+  }
+
+  private void stubPathFollowing() {
+    when(drive.getPose()).thenReturn(new Pose2d());
+    when(drive.getPathController())
+        .thenReturn(new PPHolonomicDriveController(new PIDConstants(1.0), new PIDConstants(1.0)));
+    when(drive.getPathConfig())
+        .thenReturn(
+            new RobotConfig(
+                50.0,
+                6.0,
+                new ModuleConfig(0.05, 4.0, 1.2, DCMotor.getKrakenX60(1), 6.75, 60.0, 1),
+                new Translation2d(0.3, 0.3),
+                new Translation2d(0.3, -0.3),
+                new Translation2d(-0.3, 0.3),
+                new Translation2d(-0.3, -0.3)));
+    when(drive.shouldFlipPath()).thenReturn(false);
+  }
+
+  private boolean runUntilFinished(Command command, double seconds) {
+    for (double time = 0.0; time < seconds; time += LOOP_SECONDS) {
+      SimHooks.stepTiming(LOOP_SECONDS);
+      runScheduler();
+      if (!isRunning(command)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Test
+  public void testFollowPathDrivesThePathAndStopsAtTheEnd() {
+    stubPathFollowing();
+    Command command = SwerveDriveCommands.followPath(drive, straightPath(List.of()), Map.of());
+    assertTrue(command.requirements().contains(drive));
+
+    SimHooks.pauseTiming();
+    start(command);
+    assertTrue(runUntilFinished(command, 10.0));
+    verify(drive, atLeastOnce()).runVelocity(argThat(speeds -> speeds.vx > 0.1));
+    verify(drive).stop();
+  }
+
+  @Test
+  public void testFollowPathStartsMarkersAndEndsZones() {
+    stubPathFollowing();
+    Command zone = forever("Zone");
+    Command point = forever("Point");
+    Command command =
+        SwerveDriveCommands.followPath(
+            drive,
+            straightPath(
+                List.of(new PathMarker("ZONE", 0.2, 0.5), new PathMarker("POINT", 0.7, -1.0))),
+            Map.of("ZONE", zone, "POINT", point));
+
+    SimHooks.pauseTiming();
+    start(command);
+    assertFalse(isRunning(zone));
+    assertFalse(isRunning(point));
+
+    List<String> events = new ArrayList<>();
+    boolean zoneWasRunning = false;
+    boolean pointWasRunning = false;
+    for (int i = 0; i < 500 && isRunning(command); i++) {
+      SimHooks.stepTiming(LOOP_SECONDS);
+      runScheduler();
+      boolean zoneRunning = isRunning(zone);
+      boolean pointRunning = isRunning(point);
+      if (zoneRunning && !zoneWasRunning) {
+        events.add("zone start");
+      }
+      if (!zoneRunning && zoneWasRunning && isRunning(command)) {
+        events.add("zone end");
+      }
+      if (pointRunning && !pointWasRunning) {
+        events.add("point start");
+      }
+      zoneWasRunning = zoneRunning;
+      pointWasRunning = pointRunning;
+    }
+
+    assertFalse(isRunning(command));
+    assertEquals(List.of("zone start", "zone end", "point start"), events);
+    assertFalse(isRunning(point));
+  }
+
+  @Test
+  public void testFollowPathSkipsMarkersWithNoCommand() {
+    stubPathFollowing();
+    Command command =
+        SwerveDriveCommands.followPath(
+            drive, straightPath(List.of(new PathMarker("MISSING", 0.5, -1.0))), Map.of());
+
+    SimHooks.pauseTiming();
+    start(command);
+    assertTrue(runUntilFinished(command, 10.0));
   }
 }

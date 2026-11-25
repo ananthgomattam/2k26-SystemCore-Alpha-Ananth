@@ -20,8 +20,10 @@ public record AutoPath(PathPlannerPath path, List<PathMarker> markers) {
   }
 
   public static AutoPath load(String name) throws Exception {
+    return load(new File(Filesystem.getDeployDirectory(), "pathplanner/paths/" + name + ".path"));
+  }
 
-    File file = new File(Filesystem.getDeployDirectory(), "pathplanner/paths/" + name + ".path");
+  static AutoPath load(File file) throws Exception {
     String pathFile = Files.readString(file.toPath());
     JSONObject parsed = (JSONObject) new JSONParser().parse(pathFile);
 
